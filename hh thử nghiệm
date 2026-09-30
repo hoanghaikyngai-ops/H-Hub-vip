@@ -120,7 +120,7 @@ BirthdayText.ZIndex = 1001
 
 local BirthdaySound = Instance.new("Sound", ScreenGui)
 BirthdaySound.Name = "BirthdayMusic"
-BirthdaySound.SoundId = "rbxassetid://9045814042"
+BirthdaySound.SoundId = "rbxassetid://9043574701"
 BirthdaySound.Volume = 0.7
 BirthdaySound.Looped = false
 BirthdaySound.Parent = ScreenGui
