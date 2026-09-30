@@ -577,7 +577,7 @@ local function updateHeadBillboard()
         cortisolImage.BackgroundTransparency = 1
         cortisolImage.ScaleType = Enum.ScaleType.Fit
         -- Đã cập nhật chính xác ID bảng low cortisol mới theo yêu cầu
-        cortisolImage.Image = "rbxassetid://98594464592340"
+        cortisolImage.Image = "rbxassetid://125752815379402"
     end
 end
 
