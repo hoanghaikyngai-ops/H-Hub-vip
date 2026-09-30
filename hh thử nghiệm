@@ -562,7 +562,7 @@ end
 -- ====================== TAB 2: THU HOẠCH ======================
 sectionLabel(P2, "  CHẾ ĐỘ TỰ ĐỘNG", 0)
 local AutoToggleBtn = mkBtn(P2, "🎣  TỰ ĐỘNG CÂU: TẮT", 40, Color3.fromRGB(120, 20, 40), 1)
-local ServerDmgBtn = mkBtn(P2, "⚡  SÁT THƯƠNG: TẮT", 40, Color3.fromRGB(35, 45, 60), 2)
+local ServerDmgBtn = mkBtn(P2, "⚡  SÁT THƯƠNG: TẮT", 40, Color3.fromRGB(70, 55, 110), 2)
 local tip2 = Instance.new("TextLabel", P2)
 tip2.Size = UDim2.new(1,-4,0,28)
 tip2.BackgroundColor3 = Color3.fromRGB(14,22,38)
@@ -870,12 +870,12 @@ end)
 -- ====================== TAB 6: TỐI ƯU ======================
 sectionLabel(P6, "  HIỆU NĂNG & FPS", 0)
 local function createFixLagButton(name, order, callback)
-    local btn = mkBtn(P6, "◇ " .. name .. ": TẮT", 36, Color3.fromRGB(50, 55, 70), order)
+    local btn = mkBtn(P6, "◇ " .. name .. ": TẮT", 36, Color3.fromRGB(55, 75, 120), order)
     local state = false
     btn.MouseButton1Click:Connect(function()
         state = not state
         btn.Text = (state and "◆ " or "◇ ") .. name .. (state and ": BẬT" or ": TẮT")
-        btn.BackgroundColor3 = state and Color3.fromRGB(10, 120, 70) or Color3.fromRGB(50, 55, 70)
+        btn.BackgroundColor3 = state and Color3.fromRGB(15, 135, 85) or Color3.fromRGB(55, 75, 120)
         callback(state)
     end)
     return btn
