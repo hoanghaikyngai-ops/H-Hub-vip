@@ -136,12 +136,33 @@ BirthdaySound.Ended:Connect(function()
     StopBirthdayIntro()
 end)
 
--- Chạm/click bất kỳ chỗ nào trên màn hình để tắt cả chữ và nhạc.
+-- Giữ chuột/chạm màn hình liên tục 3 giây mới tắt chữ và nhạc
+local birthdayHoldToken = 0
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not BirthdayIntroActive then return end
+
     if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
-        StopBirthdayIntro()
+
+        birthdayHoldToken += 1
+        local currentToken = birthdayHoldToken
+
+        task.delay(3, function()
+            if BirthdayIntroActive and currentToken == birthdayHoldToken then
+                StopBirthdayIntro()
+            end
+        end)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if not BirthdayIntroActive then return end
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        -- Thả tay/chuột trước 3 giây thì hủy
+        birthdayHoldToken += 1
     end
 end)
 
