@@ -82,6 +82,72 @@ ScreenGui.DisplayOrder = 99999
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = PlayerGui
 
+-- =========================================================
+-- BIRTHDAY INTRO: CHÚC MỪNG SINH NHẬT CHÍ DUY
+-- Hiện khi script vừa bật; chạm/click màn hình để tắt.
+-- Tự tắt khi bài nhạc kết thúc.
+-- =========================================================
+local BirthdayIntroActive = true
+
+local BirthdayFrame = Instance.new("Frame", ScreenGui)
+BirthdayFrame.Name = "BirthdayIntro"
+BirthdayFrame.Size = UDim2.new(0, 520, 0, 120)
+BirthdayFrame.Position = UDim2.new(0.5, -260, 0.18, 0)
+BirthdayFrame.BackgroundColor3 = Color3.fromRGB(13, 20, 36)
+BirthdayFrame.BackgroundTransparency = 0.08
+BirthdayFrame.ZIndex = 1000
+corner(BirthdayFrame, 18)
+stroke(BirthdayFrame, Color3.fromRGB(255, 170, 40), 1.5, 0.15)
+
+local BirthdayGradient = Instance.new("UIGradient", BirthdayFrame)
+BirthdayGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 140, 30)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 210, 70)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 30))
+})
+BirthdayGradient.Transparency = NumberSequence.new(0.86)
+
+local BirthdayText = Instance.new("TextLabel", BirthdayFrame)
+BirthdayText.Size = UDim2.new(1, -20, 1, -16)
+BirthdayText.Position = UDim2.new(0, 10, 0, 8)
+BirthdayText.BackgroundTransparency = 1
+BirthdayText.Text = "🎂  CHÚC MỪNG SINH NHẬT CHÍ DUY  🎉"
+BirthdayText.TextColor3 = Color3.fromRGB(255, 220, 100)
+BirthdayText.Font = FONT_BOLD
+BirthdayText.TextSize = 25
+BirthdayText.TextWrapped = true
+BirthdayText.ZIndex = 1001
+
+local BirthdaySound = Instance.new("Sound", ScreenGui)
+BirthdaySound.Name = "BirthdayMusic"
+BirthdaySound.SoundId = "rbxassetid://9045814042"
+BirthdaySound.Volume = 0.7
+BirthdaySound.Looped = false
+BirthdaySound.Parent = ScreenGui
+
+local function StopBirthdayIntro()
+    if not BirthdayIntroActive then return end
+    BirthdayIntroActive = false
+    BirthdaySound:Stop()
+    BirthdayFrame.Visible = false
+end
+
+BirthdaySound.Ended:Connect(function()
+    StopBirthdayIntro()
+end)
+
+-- Chạm/click bất kỳ chỗ nào trên màn hình để tắt cả chữ và nhạc.
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not BirthdayIntroActive then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        StopBirthdayIntro()
+    end
+end)
+
+BirthdaySound:Play()
+
+
 -- ============ NÚT MỞ MENU (PILL HIỆN ĐẠI) ============
 local ToggleBtn = Instance.new("TextButton", ScreenGui)
 ToggleBtn.Size = UDim2.new(0, 126, 0, 36)
@@ -157,7 +223,7 @@ local HeaderText = Instance.new("TextLabel", TopHeader)
 HeaderText.Size = UDim2.new(0, 270, 0, 22)
 HeaderText.Position = UDim2.new(0, 52, 0, 5)
 HeaderText.BackgroundTransparency = 1
-HeaderText.Text = "H-HUB  •  v8.5 QUANTUM"
+HeaderText.Text = "H-HUB  •  v8.5"
 HeaderText.TextColor3 = C_TEXT
 HeaderText.Font = FONT_BOLD
 HeaderText.TextSize = 14
@@ -328,14 +394,14 @@ local function mkBtn(parent, text, h, bg, order)
     b.AutoButtonColor = false
     corner(b, 10)
     stroke(b, Color3.fromRGB(255,255,255), 1, 0.85)
+    -- Gradient trắng cực nhẹ: không phủ đen lên màu nền của từng nút.
     local g = Instance.new("UIGradient", b)
     g.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0,0,0))
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
     })
-    -- overlay trắng rất nhẹ để có chiều sâu (dùng Transparency)
     g.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.92),
+        NumberSequenceKeypoint.new(0, 0.96),
         NumberSequenceKeypoint.new(1, 1)
     })
     g.Rotation = 90
@@ -475,7 +541,7 @@ end
 -- ====================== TAB 2: THU HOẠCH ======================
 sectionLabel(P2, "  CHẾ ĐỘ TỰ ĐỘNG", 0)
 local AutoToggleBtn = mkBtn(P2, "🎣  TỰ ĐỘNG CÂU: TẮT", 40, Color3.fromRGB(120, 20, 40), 1)
-local ServerDmgBtn = mkBtn(P2, "⚡  SÁT THƯƠNG LƯỢNG TỬ: TẮT", 40, Color3.fromRGB(35, 45, 60), 2)
+local ServerDmgBtn = mkBtn(P2, "⚡  SÁT THƯƠNG: TẮT", 40, Color3.fromRGB(35, 45, 60), 2)
 local tip2 = Instance.new("TextLabel", P2)
 tip2.Size = UDim2.new(1,-4,0,28)
 tip2.BackgroundColor3 = Color3.fromRGB(14,22,38)
@@ -499,7 +565,11 @@ FishStatus.Text = "🎒 Kho cá: 0 / Ngưỡng bán: 50"
 corner(FishStatus, 10)
 stroke(FishStatus, Color3.fromRGB(45,255,200), 1, 0.6)
 
-local MaxFishCapBtn = mkBtn(P3, "🔄  ĐỔI NGƯỠNG KHO: 50", 40, Color3.fromRGB(140, 80, 10), 2)
+local MaxFishCapBtn = mkBtn(P3, "🔄  ĐỔI NGƯỠNG KHO: 50", 40, Color3.fromRGB(230, 135, 25), 2)
+do
+    local capGrad = MaxFishCapBtn:FindFirstChildOfClass("UIGradient")
+    if capGrad then capGrad:Destroy() end
+end
 
 local maxFishCapacity = 50
 local capacityOptions = {10, 20, 30, 40, 50}
@@ -833,7 +903,7 @@ t7Lbl.TextSize = 11
 t7Lbl.TextWrapped = true
 t7Lbl.TextXAlignment = Enum.TextXAlignment.Left
 t7Lbl.TextYAlignment = Enum.TextYAlignment.Top
-t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.5 LƯỢNG TỬ (THU GỌN)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới lượng tử: 97.4%\n• Đồng bộ: ỔN ĐỊNH\n• Tăng tốc phần cứng: BẬT\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN\n• Kênh 02: NGỦ\n• Toàn vẹn liên kết: AN TOÀN"
+t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.5 (THU GỌN)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới hệ thống: 97.4%\n• Đồng bộ: ỔN ĐỊNH\n• Tăng tốc phần cứng: BẬT\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN\n• Kênh 02: NGỦ\n• Toàn vẹn liên kết: AN TOÀN"
 
 -- ====================== THANH NHẠC HIỆN ĐẠI ======================
 local MusicBarContainer = Instance.new("Frame", Main)
@@ -1019,7 +1089,7 @@ end)
 
 ServerDmgBtn.MouseButton1Click:Connect(function()
     isServerDmgOn = not isServerDmgOn
-    ServerDmgBtn.Text = isServerDmgOn and "⚡  SÁT THƯƠNG LƯỢNG TỬ: BẬT" or "⚡  SÁT THƯƠNG LƯỢNG TỬ: TẮT"
+    ServerDmgBtn.Text = isServerDmgOn and "⚡  SÁT THƯƠNG: BẬT" or "⚡  SÁT THƯƠNG: TẮT"
     ServerDmgBtn.BackgroundColor3 = isServerDmgOn and Color3.fromRGB(100, 15, 130) or Color3.fromRGB(35, 45, 60)
 end)
 
@@ -1112,6 +1182,7 @@ task.spawn(function()
         if isRunning and not isSellingFish and not isFightingFish then
             local fishPart = findActiveFishTarget()
             if fishPart then
+                -- Ưu tiên xử lý cá: vòng câu sẽ tự nhả chuột khi thấy cờ này.
                 isFightingFish = true
                 pcall(function()
                     local fishFightStart = tick()
@@ -1172,7 +1243,8 @@ task.spawn(function()
                     local vp = Camera.ViewportSize
                     VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 1); task.wait(0.08)
                     VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, false, game, 1); task.wait(0.25)
-                    root.Anchored = false; hum.WalkSpeed = 16; task.wait(0.05)
+                    -- Khóa chân ngay sau khi click màn hình và giữ khóa trong suốt quá trình bay đi bán.
+                    root.Anchored = true; hum.WalkSpeed = 0; task.wait(0.05)
 
                     local dynamicMerchantPos = getMerchantPosition()
                     local safeTargetPos = dynamicMerchantPos - (CFrame.new(dynamicMerchantPos).LookVector * 3.5)
@@ -1207,8 +1279,13 @@ task.spawn(function()
                         pcall(function() root.Anchored = true; hum.WalkSpeed = 0; root.CFrame = CFrame.new(safeTargetPos, dynamicMerchantPos) end)
                         clickBtn({"bán tất cả", "sell all", "bán", "sell"}); task.wait(0.25)
                         clickBtn({"xác nhận", "confirm", "đồng ý", "yes", "ok"}); task.wait(0.4)
-                        if getFishToSellCount() == 0 or (initialFishCount - getFishToSellCount() > 0) then task.wait(0.3); break end
-                    until (tick() - sellStartTime > 8) or not isRunning
+                        -- Chỉ coi là bán xong khi kho cá đã về 0.
+                        -- Nếu số cá mới giảm một phần, vẫn giữ khóa chân và tiếp tục bán.
+                        if getFishToSellCount() <= 0 then
+                            task.wait(0.3)
+                            break
+                        end
+                    until (tick() - sellStartTime > 10) or not isRunning
 
                     task.wait(0.4)
                     local byeStartTime = tick()
@@ -1219,6 +1296,8 @@ task.spawn(function()
                         task.wait(0.25)
                     until (tick() - byeStartTime > 4.0) or not isRunning
 
+                    -- Sau khi bán xong, tìm và bấm "Tạm biệt" trước.
+                    -- Chỉ sau đó mới tháo khóa chân và bay về điểm câu.
                     if merchantLockConnection then merchantLockConnection:Disconnect(); merchantLockConnection = nil end
 
                     if OriginalFishingSpotCFrame then
@@ -1243,13 +1322,47 @@ task.spawn(function()
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game); task.wait(0.1)
                 end
 
+                -- Vòng thả câu:
+                -- chưa có cá -> giữ cần liên tục 2 giây -> thả -> lập tức bắt đầu lượt mới.
+                -- nếu cá xuất hiện giữa chừng -> thả cần NGAY -> để vòng FightingFish xử lý.
                 if isRunning and not isSellingFish and not isFightingFish then
                     local vp = Camera.ViewportSize
-                    if activeTool then pcall(function() activeTool:Activate() end) end
-                    VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2 - 80, 0, true, game, 1)
+                    local castX, castY = vp.X / 2, vp.Y / 2 - 80
+                    local castHeld = false
+
+                    local function releaseCast()
+                        if castHeld then
+                            VirtualInputManager:SendMouseButtonEvent(
+                                castX, castY, 0, false, game, 1
+                            )
+                            castHeld = false
+                        end
+                    end
+
+                    -- Bắt đầu giữ cần.
+                    VirtualInputManager:SendMouseButtonEvent(
+                        castX, castY, 0, true, game, 1
+                    )
+                    castHeld = true
+                    if activeTool then
+                        pcall(function() activeTool:Activate() end)
+                    end
+
                     local holdStart = tick()
-                    while tick() - holdStart < 2.0 and isRunning and not isSellingFish and not isFightingFish do task.wait(0.05) end
-                    VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2 - 80, 0, false, game, 1)
+                    while isRunning
+                        and not isSellingFish
+                        and not isFightingFish
+                        and (tick() - holdStart < 2.0) do
+
+                        -- Kiểm tra cá liên tục trong lúc đang giữ cần.
+                        if findActiveFishTarget() then
+                            break
+                        end
+                        task.wait(0.03)
+                    end
+
+                    -- Cá xuất hiện hoặc đủ 2 giây: dừng giữ cần.
+                    releaseCast()
                     task.wait(0.05)
                 end
             end)
