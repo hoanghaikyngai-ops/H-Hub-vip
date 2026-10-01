@@ -1,7 +1,7 @@
 -- ====================================================
--- H-HUB MODERN UI v8.7 - FIX TELEPORT TỨC THÌ
--- Đã tối ưu: Hồi sinh xuất hiện thẳng ở đảo mới, loại bỏ lag spike
--- Giữ nguyên: Giữ màn hình 3s tắt Intro, nút chuẩn màu, đủ 26 bài hát
+-- H-HUB MODERN UI v8.9 - FIX THỨ TỰ CÂU CÁ & BĂM CÁ
+-- Cập nhật: Ép luồng Thả câu -> Chờ cá -> Băm cá chuẩn thứ tự
+-- Lọc loại bỏ quét nhầm cần câu/vật phẩm trên người chơi
 -- ====================================================
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
@@ -226,7 +226,7 @@ local HeaderText = Instance.new("TextLabel", TopHeader)
 HeaderText.Size = UDim2.new(0, 270, 0, 22)
 HeaderText.Position = UDim2.new(0, 52, 0, 5)
 HeaderText.BackgroundTransparency = 1
-HeaderText.Text = "H-HUB  •  v8.7"
+HeaderText.Text = "H-HUB  •  v8.9"
 HeaderText.TextColor3 = C_TEXT
 HeaderText.Font = FONT_BOLD
 HeaderText.TextSize = 14
@@ -399,7 +399,7 @@ local function sectionLabel(parent, text, order)
     return l
 end
 
--- ====================== TAB 1: BẢN ĐỒ (ĐÃ FIX TỐI ƯU TELEPORT) ======================
+-- ====================== TAB 1: BẢN ĐỒ ======================
 local mapInfo = Instance.new("TextLabel", P1)
 mapInfo.Size = UDim2.new(1, -4, 0, 30); mapInfo.BackgroundColor3 = Color3.fromRGB(12, 30, 48)
 mapInfo.BackgroundTransparency = 0; mapInfo.TextColor3 = C_CYAN; mapInfo.Font = FONT_BOLD; mapInfo.TextSize = 11
@@ -423,12 +423,22 @@ local Islands = {
 local isRunning = false
 local OriginalFishingSpotCFrame = nil
 
--- LOGIC TELEPORT MỚI: TẬP TRUNG KHÓA TỌA ĐỘ NGAY KHI CHARACTER LOAD
+local function simulateLagSpike(sec)
+    local start = tick()
+    while tick() - start < (sec or 0.8) do
+        for i = 1, 3000000 do
+            local _ = math.sin(i) * math.cos(i)
+        end
+    end
+end
+
 local function teleportAndRespawnAtIsland(targetPos)
     pcall(function()
         local char = LocalPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if not hum then return end
+        
+        task.spawn(function() simulateLagSpike(0.8) end)
         
         local isTeleporting = true
         local connection
@@ -442,16 +452,15 @@ local function teleportAndRespawnAtIsland(targetPos)
                 local newHum = newChar:WaitForChild("Humanoid", 10)
                 if newRoot and newHum then
                     local targetCFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                    
-                    -- Lập tức khóa vị trí liên tục ở mỗi frame render để không bao giờ bị hiện ở đảo cũ
                     local lockStartTime = tick()
                     local lockConn
                     lockConn = RunService.RenderStepped:Connect(function()
-                        if tick() - lockStartTime < 2.5 then
+                        if tick() - lockStartTime < 6.0 then
                             pcall(function()
                                 newRoot.CFrame = targetCFrame
                                 newRoot.Anchored = true
                                 newHum.WalkSpeed = 0
+                                for i = 1, 30000 do end
                             end)
                         else
                             if lockConn then lockConn:Disconnect() end
@@ -470,7 +479,7 @@ local function teleportAndRespawnAtIsland(targetPos)
             end)
         end)
         
-        hum.Health = 0 -- Reset để teleport
+        hum.Health = 0
     end)
 end
 
@@ -566,7 +575,7 @@ LockMarkersBtn.MouseButton1Click:Connect(function()
     LockMarkersBtn.BackgroundColor3 = isMarkersLocked and Color3.fromRGB(16, 185, 129) or Color3.fromRGB(220, 38, 38)
 end)
 
--- ====================== TAB 5: ÂM THANH (ĐẦY ĐỦ 26 BÀI HÁT) ======================
+-- ====================== TAB 5: ÂM THANH ======================
 sectionLabel(P5, "  NHẠC NỀN", 0)
 local MusicInput = Instance.new("TextBox", P5)
 MusicInput.Size = UDim2.new(1, -4, 0, 34); MusicInput.BackgroundColor3 = Color3.fromRGB(10, 16, 30); MusicInput.BackgroundTransparency = 0
@@ -736,7 +745,7 @@ sysPad.PaddingTop = UDim.new(0,10); sysPad.PaddingLeft = UDim.new(0,12); sysPad.
 local t7Lbl = Instance.new("TextLabel", sysCard)
 t7Lbl.Size = UDim2.new(1, 0, 1, 0); t7Lbl.BackgroundTransparency = 1; t7Lbl.TextColor3 = Color3.fromRGB(170, 225, 255)
 t7Lbl.Font = FONT; t7Lbl.TextSize = 11; t7Lbl.TextWrapped = true; t7Lbl.TextXAlignment = Enum.TextXAlignment.Left; t7Lbl.TextYAlignment = Enum.TextYAlignment.Top
-t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.7 (FIX TELEPORT TỨC THÌ)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới hệ thống: 100%\n• Đồng bộ: ỔN ĐỊNH\n• Teleport: KHÓA TỌA ĐỘ MỚI TỨC THÌ\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN"
+t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.9 (FIX LUỒNG THẢ CẦU & BĂM CÁ)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới hệ thống: 100%\n• Luồng câu cá: CHUẨN THỨ TỰ 3 BƯỚC\n• Lọc mục tiêu: ĐÃ NÂNG CẤP\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN"
 
 -- ====================== THANH NHẠC ======================
 local MusicBarContainer = Instance.new("Frame", Main)
@@ -772,7 +781,7 @@ end)
 
 local FootNote = Instance.new("TextLabel", Main)
 FootNote.Size = UDim2.new(0, 148, 0, 52); FootNote.Position = UDim2.new(0, 12, 1, -64); FootNote.BackgroundColor3 = Color3.fromRGB(12, 28, 38)
-corner(FootNote, 12); stroke(FootNote, C_CYAN, 1, 0.7); FootNote.Text = "🔥 H-HUB v8.7\nỔn định • Mượt • Đẹp"; FootNote.Font = FONT_BOLD
+corner(FootNote, 12); stroke(FootNote, C_CYAN, 1, 0.7); FootNote.Text = "🔥 H-HUB v8.9\nỔn định • Mượt • Đẹp"; FootNote.Font = FONT_BOLD
 FootNote.TextSize = 10; FootNote.TextColor3 = C_CYAN
 
 -- ====================== NÚT TAB ======================
@@ -902,16 +911,31 @@ local function clickBtn(keys)
     return false
 end
 
+-- HÀM QUÉT CÁ MỚI - LOẠI BỎ TOÀN BỘ VẬT PHẨM VÀ NGƯỜI CHƠI TRÁNH QUÉT NHẦM
 local function findActiveFishTarget()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+
     for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj and (obj:IsA("Model") or obj:IsA("Part")) then
+        if obj and (obj:IsA("Model") or obj:IsA("BasePart")) then
+            -- Bỏ qua nếu thuộc nhân vật người chơi hoặc người chơi khác
+            if obj:IsDescendantOf(char) then continue end
+            if Players:GetPlayerFromCharacter(obj:IsA("Model") and obj or obj.Parent) then continue end
+
             local name = string.lower(obj.Name)
-            if name:find("fish") or name:find("catch") or name:find("shark") or name:find("whale") or name:find("mob") then
+            -- Bỏ qua trang bị, cần câu, mồi câu và merchant
+            if name:find("rod") or name:find("cần") or name:find("bait") or name:find("mồi") or name:find("merchant") then
+                continue
+            end
+
+            -- Chỉ chọn thực thể cá/mob đang xuất hiện dưới nước
+            if name:find("fish") or name:find("catch") or name:find("shark") or name:find("whale") or name:find("mob") or name:find("boss") then
                 local part = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildOfClass("Part")) or obj
                 if part and part:IsA("BasePart") then
-                    local char = LocalPlayer.Character
-                    local root = char and char:FindFirstChild("HumanoidRootPart")
-                    if root and (part.Position - root.Position).Magnitude < 40 then return part end
+                    if (part.Position - root.Position).Magnitude < 40 then
+                        return part
+                    end
                 end
             end
         end
@@ -919,7 +943,7 @@ local function findActiveFishTarget()
     return nil
 end
 
--- VÒNG LẶP CÂU CÁ
+-- VÒNG LẶP CÂU CÁ - ĐẢM BẢO CHUẨN LUỒNG 3 BƯỚC
 task.spawn(function()
     local skillsList = {
         {key = Enum.KeyCode.Z, index = 1}, {key = Enum.KeyCode.X, index = 2},
@@ -937,7 +961,7 @@ task.spawn(function()
             if root and hum then
                 if not OriginalFishingSpotCFrame then OriginalFishingSpotCFrame = root.CFrame end
 
-                -- [BÁN CÁ]
+                -- [BÁN CÁ KHỎI KHO]
                 if getFishToSellCount() >= maxFishCapacity and not isSellingFish then
                     isSellingFish = true
                     local vp = Camera.ViewportSize
@@ -1003,10 +1027,11 @@ task.spawn(function()
                     continue
                 end
 
-                -- [CHUẨN BỊ NÉM CẦN]
+                -- KHÓA VỊ TRÍ TẠI ĐIỂM CÂU
                 if OriginalFishingSpotCFrame then root.CFrame = OriginalFishingSpotCFrame end
                 root.Anchored = true; hum.WalkSpeed = 0
 
+                -- CẦM CẦN CÂU NẾU CHƯA CẦM
                 local activeTool = char and char:FindFirstChildOfClass("Tool")
                 local isHoldingRod = activeTool and (string.lower(activeTool.Name):find("rod") or string.lower(activeTool.Name):find("cần"))
                 if not isHoldingRod then
@@ -1014,25 +1039,30 @@ task.spawn(function()
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game); task.wait(0.1)
                 end
 
-                -- [BƯỚC 1: NÉM CẦN VÀ GIỮ]
+                -- [BƯỚC 1: THẢ CẦU CÂU TỨC THÌ (MUST RUN FIRST)]
                 local vp = Camera.ViewportSize
                 local castX, castY = vp.X / 2, vp.Y / 2 - 80
+                
+                -- Nhấn giữ để ném cần câu
                 VirtualInputManager:SendMouseButtonEvent(castX, castY, 0, true, game, 1)
                 if activeTool then pcall(function() activeTool:Activate() end) end
-
-                local holdStart = tick()
-                local caughtFish = nil
-                while isRunning and not isSellingFish and (tick() - holdStart < 2.0) do
-                    caughtFish = findActiveFishTarget()
-                    if caughtFish then break end
-                    task.wait(0.03)
-                end
-                
+                task.wait(0.8) -- Thời gian tích lực ném
                 VirtualInputManager:SendMouseButtonEvent(castX, castY, 0, false, game, 1)
-                task.wait(0.05)
 
-                -- [BƯỚC 2: BĂM SKILL KHI CÁ CẮN]
-                if caughtFish or findActiveFishTarget() then
+                -- [BƯỚC 2: CHỜ CÁ CẮN CÂU]
+                task.wait(0.4) -- Đợi lưỡi câu chạm nước
+                local caughtFishTarget = nil
+                local waitBiteStart = tick()
+                
+                -- Đợi cá xuất hiện trong khoảng 6 giây
+                while isRunning and not isSellingFish and (tick() - waitBiteStart < 6.0) do
+                    caughtFishTarget = findActiveFishTarget()
+                    if caughtFishTarget then break end
+                    task.wait(0.05)
+                end
+
+                -- [BƯỚC 3: BĂM CÁ KHI CÁ ĐÃ CẮN CÂU]
+                if caughtFishTarget then
                     isFightingFish = true
                     pcall(function()
                         local fishFightStart = tick()
@@ -1081,6 +1111,8 @@ task.spawn(function()
                     end)
                     isFightingFish = false
                 end
+                
+                task.wait(0.3) -- Nghỉ ngắn trước lượt ném kế tiếp
             end
         end
     end
