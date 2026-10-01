@@ -1,7 +1,6 @@
 -- ====================================================
--- H-HUB MODERN UI v8.5 - REDESIGN GIỮ NGUYÊN TÍNH NĂNG
--- Thiết kế: Dark Glass / Gradient hiện đại, bo góc lớn
--- Đã Tối Ưu: Fix chữ mờ, Fix giật Teleport, Fix vòng lặp câu cá, Đầy đủ 26 bài hát
+-- H-HUB MODERN UI v8.6 - REDESIGN & STRUCTURAL FIX
+-- Sửa lỗi: Nút bị mất màu/mờ + Thêm giữ màn hình 3s tắt Intro
 -- ====================================================
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
@@ -22,13 +21,12 @@ pcall(function()
     if PlayerGui:FindFirstChild("SkillMarkersUI") then PlayerGui.SkillMarkersUI:Destroy() end
 end)
 
--- ============ PHONG CÁCH HIỆN ĐẠI ============
+-- ============ PHONG CÁCH HIỆN ĐẠI & MÀU SẮC CHUẨN ============
 local FONT = Enum.Font.GothamMedium
 local FONT_BOLD = Enum.Font.GothamBold
 
 local C_BG      = Color3.fromRGB(10, 14, 26)
 local C_CARD    = Color3.fromRGB(17, 24, 40)
-local C_CARD2   = Color3.fromRGB(22, 30, 50)
 local C_CYAN    = Color3.fromRGB(0, 229, 255)
 local C_BLUE    = Color3.fromRGB(59, 130, 246)
 local C_PURPLE  = Color3.fromRGB(139, 92, 246)
@@ -43,6 +41,7 @@ local function corner(obj, r)
     c.CornerRadius = UDim.new(0, r or 10)
     c.Parent = obj
 end
+
 local function stroke(obj, color, thick, transp)
     local s = Instance.new("UIStroke")
     s.Color = color
@@ -51,13 +50,6 @@ local function stroke(obj, color, thick, transp)
     s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     s.Parent = obj
     return s
-end
-local function gradient(obj, c1, c2, rot)
-    local g = Instance.new("UIGradient")
-    g.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, c1), ColorSequenceKeypoint.new(1, c2)})
-    g.Rotation = rot or 90
-    g.Parent = obj
-    return g
 end
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -68,38 +60,54 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = PlayerGui
 
 -- =========================================================
--- BIRTHDAY INTRO: CHÚC MỪNG SINH NHẬT CHÍ DUY
+-- BIRTHDAY INTRO: GIỮ MÀN HÌNH 3 GIÂY ĐỂ TẮT
 -- =========================================================
 local BirthdayIntroActive = true
 
 local BirthdayFrame = Instance.new("Frame", ScreenGui)
 BirthdayFrame.Name = "BirthdayIntro"
-BirthdayFrame.Size = UDim2.new(0, 520, 0, 120)
+BirthdayFrame.Size = UDim2.new(0, 520, 0, 135)
 BirthdayFrame.Position = UDim2.new(0.5, -260, 0.18, 0)
-BirthdayFrame.BackgroundColor3 = Color3.fromRGB(13, 20, 36)
-BirthdayFrame.BackgroundTransparency = 0.08
+BirthdayFrame.BackgroundColor3 = Color3.fromRGB(15, 22, 40)
+BirthdayFrame.BackgroundTransparency = 0.05
 BirthdayFrame.ZIndex = 1000
 corner(BirthdayFrame, 18)
-stroke(BirthdayFrame, Color3.fromRGB(255, 170, 40), 1.5, 0.15)
-
-local BirthdayGradient = Instance.new("UIGradient", BirthdayFrame)
-BirthdayGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 140, 30)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 210, 70)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 30))
-})
-BirthdayGradient.Transparency = NumberSequence.new(0.86)
+stroke(BirthdayFrame, Color3.fromRGB(255, 180, 40), 2, 0.1)
 
 local BirthdayText = Instance.new("TextLabel", BirthdayFrame)
-BirthdayText.Size = UDim2.new(1, -20, 1, -16)
-BirthdayText.Position = UDim2.new(0, 10, 0, 8)
+BirthdayText.Size = UDim2.new(1, -20, 0, 45)
+BirthdayText.Position = UDim2.new(0, 10, 0, 10)
 BirthdayText.BackgroundTransparency = 1
-BirthdayText.Text = "🎂  CHÚC MỪNG SINH NHẬT CHÍ DUY  🎉"
-BirthdayText.TextColor3 = Color3.fromRGB(255, 220, 100)
+BirthdayText.Text = "🎂 CHÚC MỪNG SINH NHẬT CHÍ DUY 🎉"
+BirthdayText.TextColor3 = Color3.fromRGB(255, 215, 60)
 BirthdayText.Font = FONT_BOLD
-BirthdayText.TextSize = 25
-BirthdayText.TextWrapped = true
+BirthdayText.TextSize = 22
 BirthdayText.ZIndex = 1001
+
+local BirthdaySubText = Instance.new("TextLabel", BirthdayFrame)
+BirthdaySubText.Size = UDim2.new(1, -20, 0, 22)
+BirthdaySubText.Position = UDim2.new(0, 10, 0, 58)
+BirthdaySubText.BackgroundTransparency = 1
+BirthdaySubText.Text = "⏳ Nhấn và GIỮ MÀN HÌNH 3 GIÂY để tắt"
+BirthdaySubText.TextColor3 = Color3.fromRGB(220, 235, 255)
+BirthdaySubText.Font = FONT
+BirthdaySubText.TextSize = 13
+BirthdaySubText.ZIndex = 1001
+
+-- Thanh tiến trình đếm ngược 3s khi giữ
+local HoldProgressBg = Instance.new("Frame", BirthdayFrame)
+HoldProgressBg.Size = UDim2.new(1, -40, 0, 8)
+HoldProgressBg.Position = UDim2.new(0, 20, 1, -24)
+HoldProgressBg.BackgroundColor3 = Color3.fromRGB(30, 42, 68)
+HoldProgressBg.ZIndex = 1001
+corner(HoldProgressBg, 4)
+
+local HoldProgressBar = Instance.new("Frame", HoldProgressBg)
+HoldProgressBar.Size = UDim2.new(0, 0, 1, 0)
+HoldProgressBar.BackgroundColor3 = Color3.fromRGB(255, 180, 0)
+HoldProgressBar.BorderSizePixel = 0
+HoldProgressBar.ZIndex = 1002
+corner(HoldProgressBar, 4)
 
 local BirthdaySound = Instance.new("Sound", ScreenGui)
 BirthdaySound.Name = "BirthdayMusic"
@@ -117,19 +125,45 @@ end
 
 BirthdaySound.Ended:Connect(StopBirthdayIntro)
 
+local holdThread = nil
+local holdStartTime = 0
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not BirthdayIntroActive then return end
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        StopBirthdayIntro()
+        holdStartTime = tick()
+        if holdThread then task.cancel(holdThread) end
+        
+        HoldProgressBar.Size = UDim2.new(0, 0, 1, 0)
+        TweenService:Create(HoldProgressBar, TweenInfo.new(3, Enum.EasingStyle.Linear), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+        
+        holdThread = task.delay(3, function()
+            if BirthdayIntroActive and (tick() - holdStartTime >= 2.9) then
+                StopBirthdayIntro()
+            end
+        end)
     end
 end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if not BirthdayIntroActive then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if holdThread then
+            task.cancel(holdThread)
+            holdThread = nil
+        end
+        TweenService:Create(HoldProgressBar, TweenInfo.new(0.2), {Size = UDim2.new(0, 0, 1, 0)}):Play()
+    end
+end)
+
 BirthdaySound:Play()
 
--- ============ NÚT MỞ MENU (PILL HIỆN ĐẠI ĐÃ FIX CHỮ MỜ) ============
+-- ============ NÚT MỞ MENU ============
 local ToggleBtn = Instance.new("TextButton", ScreenGui)
 ToggleBtn.Size = UDim2.new(0, 126, 0, 36)
 ToggleBtn.Position = UDim2.new(0, 14, 0.42, 0)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(15, 24, 48)
+ToggleBtn.BackgroundTransparency = 0
 ToggleBtn.Text = "  ◈  H-HUB"
 ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleBtn.Font = FONT_BOLD
@@ -138,7 +172,7 @@ ToggleBtn.Active = true
 ToggleBtn.Draggable = true
 corner(ToggleBtn, 18)
 local ToggleStroke = stroke(ToggleBtn, C_CYAN, 1.8, 0.1)
-local ToggleGrad = gradient(ToggleBtn, Color3.fromRGB(14,24,44), Color3.fromRGB(10,16,30), 90)
+
 local ToggleDot = Instance.new("Frame", ToggleBtn)
 ToggleDot.Size = UDim2.new(0, 8, 0, 8)
 ToggleDot.Position = UDim2.new(0, 12, 0.5, -4)
@@ -151,31 +185,27 @@ local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 580, 0, 360)
 Main.Position = UDim2.new(0.5, -290, 0.5, -180)
 Main.BackgroundColor3 = C_BG
-Main.BackgroundTransparency = 0.06
+Main.BackgroundTransparency = 0.05
 Main.Active = true
 Main.Visible = true
 corner(Main, 16)
 local MainStroke = stroke(Main, C_CYAN, 1.5, 0.25)
+
 local TopGlow = Instance.new("Frame", Main)
 TopGlow.Size = UDim2.new(1, -32, 0, 2)
 TopGlow.Position = UDim2.new(0, 16, 0, 0)
 TopGlow.BackgroundColor3 = C_CYAN
 TopGlow.BorderSizePixel = 0
 corner(TopGlow, 2)
-gradient(TopGlow, C_CYAN, C_PURPLE, 0)
-
-Main.Size = UDim2.new(0, 540, 0, 330)
-Main.BackgroundTransparency = 1
-TweenService:Create(Main, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0,580,0,360), BackgroundTransparency = 0.06}):Play()
 
 -- ============ HEADER ============
 local TopHeader = Instance.new("Frame", Main)
 TopHeader.Size = UDim2.new(1, -24, 0, 52)
 TopHeader.Position = UDim2.new(0, 12, 0, 10)
 TopHeader.BackgroundColor3 = C_CARD
-TopHeader.BackgroundTransparency = 0.15
+TopHeader.BackgroundTransparency = 0.1
 corner(TopHeader, 12)
-stroke(TopHeader, Color3.fromRGB(255,255,255), 1, 0.9)
+stroke(TopHeader, Color3.fromRGB(255,255,255), 1, 0.85)
 
 local Logo = Instance.new("Frame", TopHeader)
 Logo.Size = UDim2.new(0, 36, 0, 36)
@@ -183,7 +213,7 @@ Logo.Position = UDim2.new(0, 8, 0.5, -18)
 Logo.BackgroundColor3 = Color3.fromRGB(0, 180, 220)
 Logo.BorderSizePixel = 0
 corner(Logo, 18)
-gradient(Logo, C_CYAN, C_BLUE, 45)
+
 local LogoTxt = Instance.new("TextLabel", Logo)
 LogoTxt.Size = UDim2.new(1,0,1,0)
 LogoTxt.BackgroundTransparency = 1
@@ -196,7 +226,7 @@ local HeaderText = Instance.new("TextLabel", TopHeader)
 HeaderText.Size = UDim2.new(0, 270, 0, 22)
 HeaderText.Position = UDim2.new(0, 52, 0, 5)
 HeaderText.BackgroundTransparency = 1
-HeaderText.Text = "H-HUB  •  v8.5"
+HeaderText.Text = "H-HUB  •  v8.6"
 HeaderText.TextColor3 = C_TEXT
 HeaderText.Font = FONT_BOLD
 HeaderText.TextSize = 14
@@ -219,6 +249,7 @@ Badge.BackgroundColor3 = Color3.fromRGB(16, 60, 48)
 Badge.BorderSizePixel = 0
 corner(Badge, 11)
 stroke(Badge, C_OK, 1, 0.4)
+
 local BadgeTxt = Instance.new("TextLabel", Badge)
 BadgeTxt.Size = UDim2.new(1,0,1,0)
 BadgeTxt.BackgroundTransparency = 1
@@ -240,23 +271,19 @@ corner(MinBtn, 14)
 local CloseBtn = Instance.new("TextButton", TopHeader)
 CloseBtn.Size = UDim2.new(0, 28, 0, 28)
 CloseBtn.Position = UDim2.new(1, -32, 0.5, -14)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(80, 24, 32)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 35, 45)
 CloseBtn.Text = "✕"
 CloseBtn.Font = FONT_BOLD
 CloseBtn.TextSize = 12
-CloseBtn.TextColor3 = Color3.fromRGB(255, 120, 130)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 corner(CloseBtn, 14)
 
 CloseBtn.MouseButton1Click:Connect(function()
-    TweenService:Create(Main, TweenInfo.new(0.22), {BackgroundTransparency = 1}):Play()
-    task.delay(0.22, function() Main.Visible = false end)
+    Main.Visible = false
 end)
+
 local function toggleMain()
     Main.Visible = not Main.Visible
-    if Main.Visible then
-        Main.BackgroundTransparency = 1
-        TweenService:Create(Main, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundTransparency = 0.06}):Play()
-    end
 end
 ToggleBtn.MouseButton1Click:Connect(toggleMain)
 MinBtn.MouseButton1Click:Connect(toggleMain)
@@ -282,13 +309,15 @@ local SideBar = Instance.new("Frame", Main)
 SideBar.Size = UDim2.new(0, 148, 1, -142)
 SideBar.Position = UDim2.new(0, 12, 0, 70)
 SideBar.BackgroundColor3 = C_CARD
-SideBar.BackgroundTransparency = 0.15
+SideBar.BackgroundTransparency = 0.1
 corner(SideBar, 12)
-stroke(SideBar, Color3.fromRGB(255,255,255), 1, 0.9)
+stroke(SideBar, Color3.fromRGB(255,255,255), 1, 0.85)
+
 local SideLayout = Instance.new("UIListLayout", SideBar)
 SideLayout.Padding = UDim.new(0, 6)
 SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
 local SidePad = Instance.new("UIPadding", SideBar)
 SidePad.PaddingTop = UDim.new(0, 8); SidePad.PaddingLeft = UDim.new(0, 8); SidePad.PaddingRight = UDim.new(0, 8); SidePad.PaddingBottom = UDim.new(0, 8)
 
@@ -305,7 +334,7 @@ local CenterPanel = Instance.new("Frame", Main)
 CenterPanel.Size = UDim2.new(0, 396, 1, -142)
 CenterPanel.Position = UDim2.new(0, 168, 0, 70)
 CenterPanel.BackgroundColor3 = C_CARD
-CenterPanel.BackgroundTransparency = 0.1
+CenterPanel.BackgroundTransparency = 0.05
 corner(CenterPanel, 12)
 local CenterStroke = stroke(CenterPanel, C_CYAN, 1.2, 0.45)
 
@@ -336,6 +365,7 @@ local function createPage()
     p.Visible = false
     return p
 end
+
 local function listLayout(p)
     local l = Instance.new("UIListLayout", p)
     l.Padding = UDim.new(0, 8)
@@ -343,32 +373,21 @@ local function listLayout(p)
     return l
 end
 
--- ============ NÚT HIỆN ĐẠI DÙNG CHUNG (ĐÃ FIX CHỮ MỜ) ============
+-- ============ NÚT CHUẨN MÀU (ĐÃ SỬA LỖI MẤT MÀU) ============
 local function mkBtn(parent, text, h, bg, order)
     local b = Instance.new("TextButton", parent)
     b.Size = UDim2.new(1, -4, 0, h or 34)
     b.BackgroundColor3 = bg
+    b.BackgroundTransparency = 0
     b.TextColor3 = Color3.fromRGB(255, 255, 255)
     b.Font = FONT_BOLD
     b.TextSize = 12
     b.Text = text
     b.TextTruncate = Enum.TextTruncate.AtEnd
     b.LayoutOrder = order or 0
-    b.AutoButtonColor = false
+    b.AutoButtonColor = true
     corner(b, 10)
-    stroke(b, Color3.fromRGB(255,255,255), 1, 0.5)
-    
-    local g = Instance.new("UIGradient", b)
-    g.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255))
-    })
-    g.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.90),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-    g.Rotation = 90
-    b.MouseEnter:Connect(function() TweenService:Create(b, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play() end)
+    stroke(b, Color3.fromRGB(255,255,255), 1, 0.7)
     return b
 end
 
@@ -386,11 +405,11 @@ local function sectionLabel(parent, text, order)
     return l
 end
 
--- ====================== TAB 1: BẢN ĐỒ (ĐÃ FIX LAG TELEPORT) ======================
+-- ====================== TAB 1: BẢN ĐỒ ======================
 local mapInfo = Instance.new("TextLabel", P1)
 mapInfo.Size = UDim2.new(1, -4, 0, 30); mapInfo.BackgroundColor3 = Color3.fromRGB(12, 30, 48)
-mapInfo.TextColor3 = C_CYAN; mapInfo.Font = FONT_BOLD; mapInfo.TextSize = 11
-mapInfo.Text = "  🗺  CHỌN ĐIỂM DỊCH CHUYỂN"; mapInfo.TextXAlignment = Enum.TextXAlignment.Left
+mapInfo.BackgroundTransparency = 0; mapInfo.TextColor3 = C_CYAN; mapInfo.Font = FONT_BOLD; mapInfo.TextSize = 11
+mapInfo.Text = "  🗺 CHỌN ĐIỂM DỊCH CHUYỂN"; mapInfo.TextXAlignment = Enum.TextXAlignment.Left
 mapInfo.LayoutOrder = 1; corner(mapInfo, 10); stroke(mapInfo, C_CYAN, 1, 0.6)
 
 local IslandGrid = Instance.new("Frame", P1)
@@ -464,23 +483,22 @@ end
 
 for i, island in ipairs(Islands) do
     local btn = Instance.new("TextButton", IslandGrid)
-    btn.BackgroundColor3 = C_BTN
+    btn.BackgroundColor3 = Color3.fromRGB(24, 40, 72)
+    btn.BackgroundTransparency = 0
     btn.TextColor3 = Color3.fromRGB(255,255,255)
     btn.Font = FONT_BOLD
     btn.TextSize = 12
     btn.Text = island.Name
     btn.LayoutOrder = i
-    btn.AutoButtonColor = false
+    btn.AutoButtonColor = true
     corner(btn, 10); stroke(btn, C_CYAN, 1, 0.6)
-    btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(14, 90, 130)}):Play() end)
-    btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = C_BTN}):Play() end)
     btn.MouseButton1Click:Connect(function() task.spawn(function() teleportAndRespawnAtIsland(island.Pos) end) end)
 end
 
 -- ====================== TAB 2: THU HOẠCH ======================
 sectionLabel(P2, "  CHẾ ĐỘ TỰ ĐỘNG", 0)
-local AutoToggleBtn = mkBtn(P2, "🎣  TỰ ĐỘNG CÂU: TẮT", 40, Color3.fromRGB(120, 20, 40), 1)
-local ServerDmgBtn = mkBtn(P2, "⚡  SÁT THƯƠNG: TẮT", 40, Color3.fromRGB(35, 45, 60), 2)
+local AutoToggleBtn = mkBtn(P2, "🎣  TỰ ĐỘNG CÂU: TẮT", 40, Color3.fromRGB(220, 38, 38), 1)
+local ServerDmgBtn = mkBtn(P2, "⚡  SÁT THƯƠNG: TẮT", 40, Color3.fromRGB(30, 41, 59), 2)
 local tip2 = Instance.new("TextLabel", P2)
 tip2.Size = UDim2.new(1,-4,0,28); tip2.BackgroundColor3 = Color3.fromRGB(14,22,38)
 tip2.TextColor3 = C_SUB; tip2.Font = FONT; tip2.TextSize = 10; tip2.Text = "  💡 Bật tự động câu trước khi treo máy qua đêm"
@@ -494,8 +512,7 @@ FishStatus.TextColor3 = Color3.fromRGB(45, 255, 200); FishStatus.Font = FONT_BOL
 FishStatus.LayoutOrder = 1; FishStatus.Text = "🎒 Kho cá: 0 / Ngưỡng bán: 50"
 corner(FishStatus, 10); stroke(FishStatus, Color3.fromRGB(45,255,200), 1, 0.6)
 
-local MaxFishCapBtn = mkBtn(P3, "🔄  ĐỔI NGƯỠNG KHO: 50", 40, Color3.fromRGB(230, 135, 25), 2)
-if MaxFishCapBtn:FindFirstChildOfClass("UIGradient") then MaxFishCapBtn:FindFirstChildOfClass("UIGradient"):Destroy() end
+local MaxFishCapBtn = mkBtn(P3, "🔄  ĐỔI NGƯỠNG KHO: 50", 40, Color3.fromRGB(217, 119, 6), 2)
 
 local maxFishCapacity = 50
 local capacityOptions = {10, 20, 30, 40, 50}
@@ -512,28 +529,30 @@ local KeyRow = Instance.new("Frame", P4)
 KeyRow.Size = UDim2.new(1, -4, 0, 40); KeyRow.BackgroundTransparency = 1; KeyRow.LayoutOrder = 1
 
 local ShowMarkersBtn = Instance.new("TextButton", KeyRow)
-ShowMarkersBtn.Size = UDim2.new(0.49, 0, 1, 0); ShowMarkersBtn.BackgroundColor3 = Color3.fromRGB(10, 80, 130)
+ShowMarkersBtn.Size = UDim2.new(0.49, 0, 1, 0); ShowMarkersBtn.BackgroundColor3 = Color3.fromRGB(13, 110, 253)
+ShowMarkersBtn.BackgroundTransparency = 0
 ShowMarkersBtn.TextColor3 = Color3.fromRGB(255, 255, 255); ShowMarkersBtn.Font = FONT_BOLD; ShowMarkersBtn.TextSize = 10
-ShowMarkersBtn.Text = "⌨ PHÍM ẢO: TẮT"; ShowMarkersBtn.AutoButtonColor = false
-corner(ShowMarkersBtn, 10); stroke(ShowMarkersBtn, Color3.fromRGB(255,255,255), 1, 0.85)
+ShowMarkersBtn.Text = "⌨ PHÍM ẢO: TẮT"; ShowMarkersBtn.AutoButtonColor = true
+corner(ShowMarkersBtn, 10); stroke(ShowMarkersBtn, Color3.fromRGB(255,255,255), 1, 0.7)
 
 local LockMarkersBtn = Instance.new("TextButton", KeyRow)
 LockMarkersBtn.Size = UDim2.new(0.49, 0, 1, 0); LockMarkersBtn.Position = UDim2.new(0.51, 0, 0, 0)
-LockMarkersBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60); LockMarkersBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-LockMarkersBtn.Font = FONT_BOLD; LockMarkersBtn.TextSize = 10; LockMarkersBtn.Text = "🔓 KHÓA: MỞ"; LockMarkersBtn.AutoButtonColor = false
-corner(LockMarkersBtn, 10); stroke(LockMarkersBtn, Color3.fromRGB(255,255,255), 1, 0.85)
+LockMarkersBtn.BackgroundColor3 = Color3.fromRGB(50, 60, 80); LockMarkersBtn.BackgroundTransparency = 0
+LockMarkersBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+LockMarkersBtn.Font = FONT_BOLD; LockMarkersBtn.TextSize = 10; LockMarkersBtn.Text = "🔓 KHÓA: MỞ"; LockMarkersBtn.AutoButtonColor = true
+corner(LockMarkersBtn, 10); stroke(LockMarkersBtn, Color3.fromRGB(255,255,255), 1, 0.7)
 
 local MarkersGui = Instance.new("ScreenGui")
 MarkersGui.Name = "SkillMarkersUI"; MarkersGui.ResetOnSpawn = false; MarkersGui.DisplayOrder = 10000
 MarkersGui.Parent = PlayerGui; MarkersGui.Enabled = false
 
-local markerColors = {Color3.fromRGB(240, 60, 80), Color3.fromRGB(60, 240, 120), Color3.fromRGB(0, 180, 255), Color3.fromRGB(255, 200, 50)}
+local markerColors = {Color3.fromRGB(239, 68, 68), Color3.fromRGB(16, 185, 129), Color3.fromRGB(14, 165, 233), Color3.fromRGB(245, 158, 11)}
 local markerNames = {"Ω Z", "Ψ X", "Δ C", "Φ V"}
 local markerButtons = {}
 for i = 1, 4 do
     local mBtn = Instance.new("TextButton", MarkersGui)
     mBtn.Size = UDim2.new(0, 48, 0, 48); mBtn.Position = UDim2.new(0.6 + (i * 0.07), 0, 0.5, 0)
-    mBtn.BackgroundColor3 = markerColors[i]; mBtn.BackgroundTransparency = 0.12
+    mBtn.BackgroundColor3 = markerColors[i]; mBtn.BackgroundTransparency = 0.05
     mBtn.Text = markerNames[i]; mBtn.TextColor3 = Color3.fromRGB(255, 255, 255); mBtn.TextSize = 13; mBtn.Font = FONT_BOLD
     mBtn.Active = true; mBtn.Draggable = true
     corner(mBtn, 14); stroke(mBtn, Color3.fromRGB(255,255,255), 1.5, 0.3)
@@ -543,7 +562,7 @@ end
 ShowMarkersBtn.MouseButton1Click:Connect(function()
     MarkersGui.Enabled = not MarkersGui.Enabled
     ShowMarkersBtn.Text = MarkersGui.Enabled and "⌨ PHÍM ẢO: HIỆN" or "⌨ PHÍM ẢO: TẮT"
-    ShowMarkersBtn.BackgroundColor3 = MarkersGui.Enabled and Color3.fromRGB(15, 130, 80) or Color3.fromRGB(10, 80, 130)
+    ShowMarkersBtn.BackgroundColor3 = MarkersGui.Enabled and Color3.fromRGB(16, 185, 129) or Color3.fromRGB(13, 110, 253)
 end)
 
 local isMarkersLocked = false
@@ -551,13 +570,13 @@ LockMarkersBtn.MouseButton1Click:Connect(function()
     isMarkersLocked = not isMarkersLocked
     for _, btn in ipairs(markerButtons) do btn.Draggable = not isMarkersLocked end
     LockMarkersBtn.Text = isMarkersLocked and "🔒 KHÓA: ĐÃ KHÓA" or "🔓 KHÓA: MỞ"
-    LockMarkersBtn.BackgroundColor3 = isMarkersLocked and Color3.fromRGB(15, 110, 60) or Color3.fromRGB(130, 35, 35)
+    LockMarkersBtn.BackgroundColor3 = isMarkersLocked and Color3.fromRGB(16, 185, 129) or Color3.fromRGB(220, 38, 38)
 end)
 
 -- ====================== TAB 5: ÂM THANH (ĐẦY ĐỦ 26 BÀI HÁT) ======================
 sectionLabel(P5, "  NHẠC NỀN", 0)
 local MusicInput = Instance.new("TextBox", P5)
-MusicInput.Size = UDim2.new(1, -4, 0, 34); MusicInput.BackgroundColor3 = Color3.fromRGB(10, 16, 30)
+MusicInput.Size = UDim2.new(1, -4, 0, 34); MusicInput.BackgroundColor3 = Color3.fromRGB(10, 16, 30); MusicInput.BackgroundTransparency = 0
 MusicInput.TextColor3 = Color3.fromRGB(255, 255, 255); MusicInput.PlaceholderText = "🔎  Nhập ID nhạc..."; MusicInput.PlaceholderColor3 = C_SUB
 MusicInput.Text = ""; MusicInput.Font = FONT; MusicInput.TextSize = 11; MusicInput.LayoutOrder = 1; MusicInput.ClearTextOnFocus = false
 corner(MusicInput, 10); stroke(MusicInput, C_CYAN, 1, 0.6)
@@ -566,30 +585,30 @@ local MusicRow = Instance.new("Frame", P5)
 MusicRow.Size = UDim2.new(1, -4, 0, 36); MusicRow.BackgroundTransparency = 1; MusicRow.LayoutOrder = 2
 
 local PlayMusicBtn = Instance.new("TextButton", MusicRow)
-PlayMusicBtn.Size = UDim2.new(0.49, 0, 1, 0); PlayMusicBtn.BackgroundColor3 = Color3.fromRGB(10, 120, 70)
+PlayMusicBtn.Size = UDim2.new(0.49, 0, 1, 0); PlayMusicBtn.BackgroundColor3 = Color3.fromRGB(16, 185, 129); PlayMusicBtn.BackgroundTransparency = 0
 PlayMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255); PlayMusicBtn.Font = FONT_BOLD; PlayMusicBtn.TextSize = 11
-PlayMusicBtn.Text = "▶ PHÁT NHẠC"; PlayMusicBtn.AutoButtonColor = false; corner(PlayMusicBtn, 10)
+PlayMusicBtn.Text = "▶ PHÁT NHẠC"; PlayMusicBtn.AutoButtonColor = true; corner(PlayMusicBtn, 10)
 
 local StopMusicBtn = Instance.new("TextButton", MusicRow)
 StopMusicBtn.Size = UDim2.new(0.49, 0, 1, 0); StopMusicBtn.Position = UDim2.new(0.51, 0, 0, 0)
-StopMusicBtn.BackgroundColor3 = Color3.fromRGB(130, 30, 30); StopMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-StopMusicBtn.Font = FONT_BOLD; StopMusicBtn.TextSize = 11; StopMusicBtn.Text = "⏹ DỪNG"; StopMusicBtn.AutoButtonColor = false; corner(StopMusicBtn, 10)
+StopMusicBtn.BackgroundColor3 = Color3.fromRGB(220, 38, 38); StopMusicBtn.BackgroundTransparency = 0
+StopMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255); StopMusicBtn.Font = FONT_BOLD; StopMusicBtn.TextSize = 11
+StopMusicBtn.Text = "⏹ DỪNG"; StopMusicBtn.AutoButtonColor = true; corner(StopMusicBtn, 10)
 
-local HipSwayToggleBtn = mkBtn(P5, "⚡ LẮC HÔNG & HUD TRÊN ĐẦU: TẮT", 34, Color3.fromRGB(130, 30, 30), 3)
+local HipSwayToggleBtn = mkBtn(P5, "⚡ LẮC HÔNG & HUD TRÊN ĐẦU: TẮT", 34, Color3.fromRGB(220, 38, 38), 3)
 
 local PresetContainer = Instance.new("ScrollingFrame", P5)
 PresetContainer.Size = UDim2.new(1, -4, 0, 110); PresetContainer.BackgroundColor3 = Color3.fromRGB(8, 12, 24)
-PresetContainer.BackgroundTransparency = 0.2; PresetContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+PresetContainer.BackgroundTransparency = 0.1; PresetContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 PresetContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y; PresetContainer.ScrollBarThickness = 3
 PresetContainer.ScrollBarImageColor3 = C_CYAN; PresetContainer.BorderSizePixel = 0; PresetContainer.LayoutOrder = 4
-corner(PresetContainer, 10); stroke(PresetContainer, Color3.fromRGB(255,255,255), 1, 0.9)
+corner(PresetContainer, 10); stroke(PresetContainer, Color3.fromRGB(255,255,255), 1, 0.85)
 
 local PresetLayout = Instance.new("UIListLayout", PresetContainer)
 PresetLayout.SortOrder = Enum.SortOrder.LayoutOrder; PresetLayout.Padding = UDim.new(0, 4)
 local PresetPad = Instance.new("UIPadding", PresetContainer)
 PresetPad.PaddingTop = UDim.new(0,6); PresetPad.PaddingLeft = UDim.new(0,6); PresetPad.PaddingRight = UDim.new(0,6); PresetPad.PaddingBottom = UDim.new(0,6)
 
--- KHÔI PHỤC TOÀN BỘ 26 BÀI HÁT
 local PresetSongs = {
     {Name = "💔 DJ Hối Hận Trong Anh", Id = "80415307715259"},
     {Name = "⏳ Thế Gian Xoay Vòng Remix", Id = "113675312413032"},
@@ -627,12 +646,10 @@ local currentTrackNameLabel = nil; local currentProgressBar = nil; local MusicIc
 
 for i, song in ipairs(PresetSongs) do
     local pBtn = Instance.new("TextButton", PresetContainer)
-    pBtn.Size = UDim2.new(1, -6, 0, 26); pBtn.BackgroundColor3 = Color3.fromRGB(18, 28, 46)
-    pBtn.TextColor3 = Color3.fromRGB(210, 240, 255); pBtn.Font = FONT; pBtn.TextSize = 10
+    pBtn.Size = UDim2.new(1, -6, 0, 26); pBtn.BackgroundColor3 = Color3.fromRGB(24, 38, 62); pBtn.BackgroundTransparency = 0
+    pBtn.TextColor3 = Color3.fromRGB(220, 245, 255); pBtn.Font = FONT; pBtn.TextSize = 10
     pBtn.Text = "  ♫  " .. song.Name; pBtn.TextXAlignment = Enum.TextXAlignment.Left; pBtn.TextTruncate = Enum.TextTruncate.AtEnd
-    pBtn.LayoutOrder = i; pBtn.AutoButtonColor = false; corner(pBtn, 8)
-    pBtn.MouseEnter:Connect(function() TweenService:Create(pBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(20, 70, 110)}):Play() end)
-    pBtn.MouseLeave:Connect(function() TweenService:Create(pBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(18,28,46)}):Play() end)
+    pBtn.LayoutOrder = i; pBtn.AutoButtonColor = true; corner(pBtn, 8)
     pBtn.MouseButton1Click:Connect(function()
         MusicInput.Text = song.Id; bgSound.SoundId = "rbxassetid://" .. song.Id; bgSound:Play()
         if MusicIcon then MusicIcon.Text = "⏸" end
@@ -676,10 +693,11 @@ local function updateHeadBillboard()
         cortisolImage.ScaleType = Enum.ScaleType.Fit; cortisolImage.Image = "rbxassetid://125752815379402"
     end
 end
+
 HipSwayToggleBtn.MouseButton1Click:Connect(function()
     isHipSwayEnabled = not isHipSwayEnabled
     HipSwayToggleBtn.Text = isHipSwayEnabled and "⚡ LẮC HÔNG & HUD TRÊN ĐẦU: BẬT" or "⚡ LẮC HÔNG & HUD TRÊN ĐẦU: TẮT"
-    HipSwayToggleBtn.BackgroundColor3 = isHipSwayEnabled and Color3.fromRGB(15, 120, 70) or Color3.fromRGB(130, 30, 30)
+    HipSwayToggleBtn.BackgroundColor3 = isHipSwayEnabled and Color3.fromRGB(16, 185, 129) or Color3.fromRGB(220, 38, 38)
     if isHipSwayEnabled and not bgSound.IsPlaying then bgSound:Play() end
     updateHeadBillboard()
 end)
@@ -687,12 +705,12 @@ end)
 -- ====================== TAB 6: TỐI ƯU ======================
 sectionLabel(P6, "  HIỆU NĂNG & FPS", 0)
 local function createFixLagButton(name, order, callback)
-    local btn = mkBtn(P6, "◇ " .. name .. ": TẮT", 36, Color3.fromRGB(50, 55, 70), order)
+    local btn = mkBtn(P6, "◇ " .. name .. ": TẮT", 36, Color3.fromRGB(50, 60, 80), order)
     local state = false
     btn.MouseButton1Click:Connect(function()
         state = not state
         btn.Text = (state and "◆ " or "◇ ") .. name .. (state and ": BẬT" or ": TẮT")
-        btn.BackgroundColor3 = state and Color3.fromRGB(10, 120, 70) or Color3.fromRGB(50, 55, 70)
+        btn.BackgroundColor3 = state and Color3.fromRGB(16, 185, 129) or Color3.fromRGB(50, 60, 80)
         callback(state)
     end)
     return btn
@@ -718,14 +736,14 @@ createFixLagButton("MỞ KHÓA FPS", 3, function(enabled) pcall(function() if se
 -- ====================== TAB 7: HỆ THỐNG ======================
 P7.AutomaticCanvasSize = Enum.AutomaticSize.Y
 local sysCard = Instance.new("Frame", P7)
-sysCard.Size = UDim2.new(1, 0, 0, 285); sysCard.BackgroundColor3 = Color3.fromRGB(13, 20, 36)
+sysCard.Size = UDim2.new(1, 0, 0, 285); sysCard.BackgroundColor3 = Color3.fromRGB(13, 20, 36); sysCard.BackgroundTransparency = 0
 corner(sysCard, 12); stroke(sysCard, C_CYAN, 1, 0.6)
 local sysPad = Instance.new("UIPadding", sysCard)
 sysPad.PaddingTop = UDim.new(0,10); sysPad.PaddingLeft = UDim.new(0,12); sysPad.PaddingRight = UDim.new(0,12); sysPad.PaddingBottom = UDim.new(0,10)
 local t7Lbl = Instance.new("TextLabel", sysCard)
 t7Lbl.Size = UDim2.new(1, 0, 1, 0); t7Lbl.BackgroundTransparency = 1; t7Lbl.TextColor3 = Color3.fromRGB(170, 225, 255)
 t7Lbl.Font = FONT; t7Lbl.TextSize = 11; t7Lbl.TextWrapped = true; t7Lbl.TextXAlignment = Enum.TextXAlignment.Left; t7Lbl.TextYAlignment = Enum.TextYAlignment.Top
-t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.5 (THU GỌN)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới hệ thống: 97.4%\n• Đồng bộ: ỔN ĐỊNH\n• Tăng tốc phần cứng: BẬT\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN"
+t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.6 (FIX NÚT & INTRO)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới hệ thống: 100%\n• Đồng bộ: ỔN ĐỊNH\n• Màu sắc UI: CHUẨN HIỂN THỊ\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN"
 
 -- ====================== THANH NHẠC ======================
 local MusicBarContainer = Instance.new("Frame", Main)
@@ -734,9 +752,9 @@ MusicBarContainer.BackgroundColor3 = Color3.fromRGB(13, 20, 36); MusicBarContain
 corner(MusicBarContainer, 12); local MusicBarStroke = stroke(MusicBarContainer, Color3.fromRGB(0, 200, 255), 1.2, 0.4)
 
 MusicIcon = Instance.new("TextButton", MusicBarContainer)
-MusicIcon.Size = UDim2.new(0, 34, 0, 34); MusicIcon.Position = UDim2.new(0, 8, 0.5, -17); MusicIcon.BackgroundColor3 = C_CYAN
+MusicIcon.Size = UDim2.new(0, 34, 0, 34); MusicIcon.Position = UDim2.new(0, 8, 0.5, -17); MusicIcon.BackgroundColor3 = C_CYAN; MusicIcon.BackgroundTransparency = 0
 MusicIcon.Text = "▶"; MusicIcon.TextColor3 = Color3.fromRGB(8, 12, 22); MusicIcon.Font = FONT_BOLD; MusicIcon.TextSize = 13
-MusicIcon.AutoButtonColor = false; corner(MusicIcon, 17); gradient(MusicIcon, C_CYAN, C_BLUE, 45)
+MusicIcon.AutoButtonColor = true; corner(MusicIcon, 17)
 
 currentTrackNameLabel = Instance.new("TextLabel", MusicBarContainer)
 currentTrackNameLabel.Size = UDim2.new(1, -120, 0, 18); currentTrackNameLabel.Position = UDim2.new(0, 50, 0, 7)
@@ -753,7 +771,7 @@ ProgressBg.Size = UDim2.new(1, -62, 0, 5); ProgressBg.Position = UDim2.new(0, 50
 ProgressBg.BackgroundColor3 = Color3.fromRGB(24, 36, 58); ProgressBg.BorderSizePixel = 0; corner(ProgressBg, 8)
 currentProgressBar = Instance.new("Frame", ProgressBg)
 currentProgressBar.Size = UDim2.new(0, 0, 1, 0); currentProgressBar.BackgroundColor3 = C_CYAN; currentProgressBar.BorderSizePixel = 0
-corner(currentProgressBar, 8); gradient(currentProgressBar, C_CYAN, C_PURPLE, 0)
+corner(currentProgressBar, 8)
 
 MusicIcon.MouseButton1Click:Connect(function()
     if bgSound.IsPlaying then bgSound:Pause(); MusicIcon.Text = "▶" else bgSound:Resume(); MusicIcon.Text = "⏸" end
@@ -761,10 +779,10 @@ end)
 
 local FootNote = Instance.new("TextLabel", Main)
 FootNote.Size = UDim2.new(0, 148, 0, 52); FootNote.Position = UDim2.new(0, 12, 1, -64); FootNote.BackgroundColor3 = Color3.fromRGB(12, 28, 38)
-corner(FootNote, 12); stroke(FootNote, C_CYAN, 1, 0.7); FootNote.Text = "🔥 H-HUB v8.5\nỔn định • Mượt • Đẹp"; FootNote.Font = FONT_BOLD
+corner(FootNote, 12); stroke(FootNote, C_CYAN, 1, 0.7); FootNote.Text = "🔥 H-HUB v8.6\nỔn định • Mượt • Đẹp"; FootNote.Font = FONT_BOLD
 FootNote.TextSize = 10; FootNote.TextColor3 = C_CYAN
 
--- ====================== NÚT TAB ======================
+-- ====================== NÚT TAB (ĐÃ SỬA MẦU ACTIVE DỄ NHÌN) ======================
 local tabDefs = {
     {name = "BẢN ĐỒ", icon = "🗺", title = "◈ BẢN ĐỒ DỊCH CHUYỂN"}, {name = "THU HOẠCH", icon = "🎣", title = "◈ THU HOẠCH TỰ ĐỘNG"},
     {name = "THƯƠNG MẠI", icon = "🛒", title = "◈ THƯƠNG MẠI & KHO CÁ"}, {name = "PHÍM ẢO", icon = "⌨", title = "◈ PHÍM KỸ NĂNG ẢO"},
@@ -774,30 +792,33 @@ local tabDefs = {
 local tabs = {}
 for i, def in ipairs(tabDefs) do
     local btn = Instance.new("TextButton", SideBar)
-    btn.Size = UDim2.new(1, 0, 0, 32); btn.BackgroundColor3 = C_BTN; btn.TextColor3 = Color3.fromRGB(150, 200, 230)
+    btn.Size = UDim2.new(1, 0, 0, 32); btn.BackgroundColor3 = C_BTN; btn.BackgroundTransparency = 0; btn.TextColor3 = Color3.fromRGB(180, 220, 255)
     btn.Font = FONT_BOLD; btn.Text = def.icon .. "  " .. def.name; btn.TextSize = 10; btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.LayoutOrder = i; btn.AutoButtonColor = false; corner(btn, 9); local pad = Instance.new("UIPadding", btn); pad.PaddingLeft = UDim.new(0, 8)
+    btn.LayoutOrder = i; btn.AutoButtonColor = true; corner(btn, 9); local pad = Instance.new("UIPadding", btn); pad.PaddingLeft = UDim.new(0, 8)
     stroke(btn, Color3.fromRGB(0, 150, 220), 1, 0.75)
     local bar = Instance.new("Frame", btn)
     bar.Name = "SelBar"; bar.Size = UDim2.new(0, 3, 0, 18); bar.Position = UDim2.new(0, 2, 0.5, -9)
     bar.BackgroundColor3 = C_CYAN; bar.BorderSizePixel = 0; bar.Visible = false; corner(bar, 4)
-    btn.MouseEnter:Connect(function() if not bar.Visible then TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(28, 42, 68)}):Play() end end)
-    btn.MouseLeave:Connect(function() if not bar.Visible then TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = C_BTN}):Play() end end)
     tabs[i] = btn
 end
+
 local pages = {P1, P2, P3, P4, P5, P6, P7}
 local function switchTab(index)
     for i, page in ipairs(pages) do
         page.Visible = (i == index); local bar = tabs[i]:FindFirstChild("SelBar")
         if i == index then
-            tabs[i].BackgroundColor3 = Color3.fromRGB(10, 110, 160); gradient(tabs[i], Color3.fromRGB(8, 120, 175), Color3.fromRGB(40, 70, 180), 0)
-            tabs[i].TextColor3 = Color3.fromRGB(255, 255, 255); if bar then bar.Visible = true end; PageTitle.Text = tabDefs[i].title
+            tabs[i].BackgroundColor3 = Color3.fromRGB(0, 110, 180)
+            tabs[i].TextColor3 = Color3.fromRGB(255, 255, 255)
+            if bar then bar.Visible = true end
+            PageTitle.Text = tabDefs[i].title
         else
-            for _, ch in ipairs(tabs[i]:GetChildren()) do if ch:IsA("UIGradient") then ch:Destroy() end end
-            tabs[i].BackgroundColor3 = C_BTN; tabs[i].TextColor3 = Color3.fromRGB(150, 200, 230); if bar then bar.Visible = false end
+            tabs[i].BackgroundColor3 = C_BTN
+            tabs[i].TextColor3 = Color3.fromRGB(180, 220, 255)
+            if bar then bar.Visible = false end
         end
     end
 end
+
 for i, tBtn in ipairs(tabs) do tBtn.MouseButton1Click:Connect(function() switchTab(i) end) end
 switchTab(1)
 
@@ -814,11 +835,11 @@ AutoToggleBtn.MouseButton1Click:Connect(function()
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if isRunning then
         AutoToggleBtn.Text = "🎣  TỰ ĐỘNG CÂU: BẬT"
-        AutoToggleBtn.BackgroundColor3 = Color3.fromRGB(15, 120, 70)
+        AutoToggleBtn.BackgroundColor3 = Color3.fromRGB(16, 185, 129)
         if root then OriginalFishingSpotCFrame = root.CFrame; root.Anchored = true; if hum then hum.WalkSpeed = 0 end end
     else
         AutoToggleBtn.Text = "🎣  TỰ ĐỘNG CÂU: TẮT"
-        AutoToggleBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 40)
+        AutoToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 38, 38)
         OriginalFishingSpotCFrame = nil; isSellingFish = false; isFightingFish = false
         if merchantLockConnection then merchantLockConnection:Disconnect(); merchantLockConnection = nil end
         pcall(function() if root then root.Anchored = false end; if hum then hum.WalkSpeed = 16 end end)
@@ -828,7 +849,7 @@ end)
 ServerDmgBtn.MouseButton1Click:Connect(function()
     isServerDmgOn = not isServerDmgOn
     ServerDmgBtn.Text = isServerDmgOn and "⚡  SÁT THƯƠNG: BẬT" or "⚡  SÁT THƯƠNG: TẮT"
-    ServerDmgBtn.BackgroundColor3 = isServerDmgOn and Color3.fromRGB(100, 15, 130) or Color3.fromRGB(35, 45, 60)
+    ServerDmgBtn.BackgroundColor3 = isServerDmgOn and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(30, 41, 59)
 end)
 
 local ProtectedItems = {"rod", "cần", "bait", "mồi", "potion", "license", "cá hiếm", "legendary", "mythical"}
