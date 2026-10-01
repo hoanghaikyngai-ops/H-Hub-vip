@@ -1,6 +1,7 @@
 -- ====================================================
--- H-HUB MODERN UI v8.6 - REDESIGN & STRUCTURAL FIX
--- Sửa lỗi: Nút bị mất màu/mờ + Thêm giữ màn hình 3s tắt Intro
+-- H-HUB MODERN UI v8.7 - FIX TELEPORT TỨC THÌ
+-- Đã tối ưu: Hồi sinh xuất hiện thẳng ở đảo mới, loại bỏ lag spike
+-- Giữ nguyên: Giữ màn hình 3s tắt Intro, nút chuẩn màu, đủ 26 bài hát
 -- ====================================================
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
@@ -94,7 +95,6 @@ BirthdaySubText.Font = FONT
 BirthdaySubText.TextSize = 13
 BirthdaySubText.ZIndex = 1001
 
--- Thanh tiến trình đếm ngược 3s khi giữ
 local HoldProgressBg = Instance.new("Frame", BirthdayFrame)
 HoldProgressBg.Size = UDim2.new(1, -40, 0, 8)
 HoldProgressBg.Position = UDim2.new(0, 20, 1, -24)
@@ -226,7 +226,7 @@ local HeaderText = Instance.new("TextLabel", TopHeader)
 HeaderText.Size = UDim2.new(0, 270, 0, 22)
 HeaderText.Position = UDim2.new(0, 52, 0, 5)
 HeaderText.BackgroundTransparency = 1
-HeaderText.Text = "H-HUB  •  v8.6"
+HeaderText.Text = "H-HUB  •  v8.7"
 HeaderText.TextColor3 = C_TEXT
 HeaderText.Font = FONT_BOLD
 HeaderText.TextSize = 14
@@ -278,13 +278,8 @@ CloseBtn.TextSize = 12
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 corner(CloseBtn, 14)
 
-CloseBtn.MouseButton1Click:Connect(function()
-    Main.Visible = false
-end)
-
-local function toggleMain()
-    Main.Visible = not Main.Visible
-end
+CloseBtn.MouseButton1Click:Connect(function() Main.Visible = false end)
+local function toggleMain() Main.Visible = not Main.Visible end
 ToggleBtn.MouseButton1Click:Connect(toggleMain)
 MinBtn.MouseButton1Click:Connect(toggleMain)
 
@@ -373,7 +368,6 @@ local function listLayout(p)
     return l
 end
 
--- ============ NÚT CHUẨN MÀU (ĐÃ SỬA LỖI MẤT MÀU) ============
 local function mkBtn(parent, text, h, bg, order)
     local b = Instance.new("TextButton", parent)
     b.Size = UDim2.new(1, -4, 0, h or 34)
@@ -405,7 +399,7 @@ local function sectionLabel(parent, text, order)
     return l
 end
 
--- ====================== TAB 1: BẢN ĐỒ ======================
+-- ====================== TAB 1: BẢN ĐỒ (ĐÃ FIX TỐI ƯU TELEPORT) ======================
 local mapInfo = Instance.new("TextLabel", P1)
 mapInfo.Size = UDim2.new(1, -4, 0, 30); mapInfo.BackgroundColor3 = Color3.fromRGB(12, 30, 48)
 mapInfo.BackgroundTransparency = 0; mapInfo.TextColor3 = C_CYAN; mapInfo.Font = FONT_BOLD; mapInfo.TextSize = 11
@@ -426,58 +420,57 @@ local Islands = {
     {Name = "🌋  Đảo Núi Lửa", Pos = Vector3.new(1807.50, 9.17, 1073.44)}
 }
 
-local function simulateHeavyLagSpike(duration)
-    local startTick = tick()
-    while tick() - startTick < duration do
-        local heavyTask = 0
-        for i = 1, 300000 do heavyTask = heavyTask + math.sqrt(i) end
-        RunService.Heartbeat:Wait()
-    end
-end
-
 local isRunning = false
 local OriginalFishingSpotCFrame = nil
 
+-- LOGIC TELEPORT MỚI: TẬP TRUNG KHÓA TỌA ĐỘ NGAY KHI CHARACTER LOAD
 local function teleportAndRespawnAtIsland(targetPos)
     pcall(function()
         local char = LocalPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if not hum then return end
         
-        simulateHeavyLagSpike(0.5)
         local isTeleporting = true
         local connection
         connection = LocalPlayer.CharacterAdded:Connect(function(newChar)
             if not isTeleporting then return end
             isTeleporting = false
             if connection then connection:Disconnect() end
+            
             task.spawn(function()
-                local newRoot = newChar:WaitForChild("HumanoidRootPart", 5)
-                local newHum = newChar:WaitForChild("Humanoid", 5)
+                local newRoot = newChar:WaitForChild("HumanoidRootPart", 10)
+                local newHum = newChar:WaitForChild("Humanoid", 10)
                 if newRoot and newHum then
-                    newRoot.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                    simulateHeavyLagSpike(0.8)
-                    local lockStart = tick()
-                    while tick() - lockStart < 10 do
-                        pcall(function()
-                            if newRoot and newHum then
-                                newRoot.Anchored = true; newHum.WalkSpeed = 0
-                                newRoot.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+                    local targetCFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+                    
+                    -- Lập tức khóa vị trí liên tục ở mỗi frame render để không bao giờ bị hiện ở đảo cũ
+                    local lockStartTime = tick()
+                    local lockConn
+                    lockConn = RunService.RenderStepped:Connect(function()
+                        if tick() - lockStartTime < 2.5 then
+                            pcall(function()
+                                newRoot.CFrame = targetCFrame
+                                newRoot.Anchored = true
+                                newHum.WalkSpeed = 0
+                            end)
+                        else
+                            if lockConn then lockConn:Disconnect() end
+                            if isRunning then
+                                OriginalFishingSpotCFrame = targetCFrame
+                                newRoot.Anchored = true
+                                newHum.WalkSpeed = 0
+                            else
+                                OriginalFishingSpotCFrame = nil
+                                newRoot.Anchored = false
+                                newHum.WalkSpeed = 16
                             end
-                        end)
-                        task.wait(0.1)
-                    end
-                    if isRunning then
-                        OriginalFishingSpotCFrame = newRoot.CFrame
-                        newRoot.Anchored = true; newHum.WalkSpeed = 0
-                    else
-                        OriginalFishingSpotCFrame = nil
-                        newRoot.Anchored = false; newHum.WalkSpeed = 16
-                    end
+                        end
+                    end)
                 end
             end)
         end)
-        hum.Health = 0
+        
+        hum.Health = 0 -- Reset để teleport
     end)
 end
 
@@ -743,7 +736,7 @@ sysPad.PaddingTop = UDim.new(0,10); sysPad.PaddingLeft = UDim.new(0,12); sysPad.
 local t7Lbl = Instance.new("TextLabel", sysCard)
 t7Lbl.Size = UDim2.new(1, 0, 1, 0); t7Lbl.BackgroundTransparency = 1; t7Lbl.TextColor3 = Color3.fromRGB(170, 225, 255)
 t7Lbl.Font = FONT; t7Lbl.TextSize = 11; t7Lbl.TextWrapped = true; t7Lbl.TextXAlignment = Enum.TextXAlignment.Left; t7Lbl.TextYAlignment = Enum.TextYAlignment.Top
-t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.6 (FIX NÚT & INTRO)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới hệ thống: 100%\n• Đồng bộ: ỔN ĐỊNH\n• Màu sắc UI: CHUẨN HIỂN THỊ\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN"
+t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.7 (FIX TELEPORT TỨC THÌ)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới hệ thống: 100%\n• Đồng bộ: ỔN ĐỊNH\n• Teleport: KHÓA TỌA ĐỘ MỚI TỨC THÌ\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN"
 
 -- ====================== THANH NHẠC ======================
 local MusicBarContainer = Instance.new("Frame", Main)
@@ -779,10 +772,10 @@ end)
 
 local FootNote = Instance.new("TextLabel", Main)
 FootNote.Size = UDim2.new(0, 148, 0, 52); FootNote.Position = UDim2.new(0, 12, 1, -64); FootNote.BackgroundColor3 = Color3.fromRGB(12, 28, 38)
-corner(FootNote, 12); stroke(FootNote, C_CYAN, 1, 0.7); FootNote.Text = "🔥 H-HUB v8.6\nỔn định • Mượt • Đẹp"; FootNote.Font = FONT_BOLD
+corner(FootNote, 12); stroke(FootNote, C_CYAN, 1, 0.7); FootNote.Text = "🔥 H-HUB v8.7\nỔn định • Mượt • Đẹp"; FootNote.Font = FONT_BOLD
 FootNote.TextSize = 10; FootNote.TextColor3 = C_CYAN
 
--- ====================== NÚT TAB (ĐÃ SỬA MẦU ACTIVE DỄ NHÌN) ======================
+-- ====================== NÚT TAB ======================
 local tabDefs = {
     {name = "BẢN ĐỒ", icon = "🗺", title = "◈ BẢN ĐỒ DỊCH CHUYỂN"}, {name = "THU HOẠCH", icon = "🎣", title = "◈ THU HOẠCH TỰ ĐỘNG"},
     {name = "THƯƠNG MẠI", icon = "🛒", title = "◈ THƯƠNG MẠI & KHO CÁ"}, {name = "PHÍM ẢO", icon = "⌨", title = "◈ PHÍM KỸ NĂNG ẢO"},
