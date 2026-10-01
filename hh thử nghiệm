@@ -1,7 +1,6 @@
 -- ====================================================
--- H-HUB MODERN UI v8.9 - FIX THỨ TỰ CÂU CÁ & BĂM CÁ
--- Cập nhật: Ép luồng Thả câu -> Chờ cá -> Băm cá chuẩn thứ tự
--- Lọc loại bỏ quét nhầm cần câu/vật phẩm trên người chơi
+-- H-HUB MODERN UI v8.9 - TỐI ƯU BĂM CÁ CÓ PHẠM VI (TRÁI/PHẢI)
+-- Cập nhật: Quét bán kính mượt FPS + Nhấp chuột đa điểm quanh tâm cá
 -- ====================================================
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
@@ -745,7 +744,7 @@ sysPad.PaddingTop = UDim.new(0,10); sysPad.PaddingLeft = UDim.new(0,12); sysPad.
 local t7Lbl = Instance.new("TextLabel", sysCard)
 t7Lbl.Size = UDim2.new(1, 0, 1, 0); t7Lbl.BackgroundTransparency = 1; t7Lbl.TextColor3 = Color3.fromRGB(170, 225, 255)
 t7Lbl.Font = FONT; t7Lbl.TextSize = 11; t7Lbl.TextWrapped = true; t7Lbl.TextXAlignment = Enum.TextXAlignment.Left; t7Lbl.TextYAlignment = Enum.TextYAlignment.Top
-t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.9 (FIX LUỒNG THẢ CẦU & BĂM CÁ)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới hệ thống: 100%\n• Luồng câu cá: CHUẨN THỨ TỰ 3 BƯỚC\n• Lọc mục tiêu: ĐÃ NÂNG CẤP\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN"
+t7Lbl.Text = "■ MÃ DỰ ÁN: GIAO THỨC H-HUB\n■ KỸ SƯ: HOANG HAI\n■ PHIÊN BẢN: v8.9 (QUÉT BÁN KÍNH MƯỢT + BĂM CÁ ĐA HƯỚNG)\n■ KHẨU HIỆU: Con tuất Pikachu bố cân tất 🔥\n\n≫ CHẨN ĐOÁN HỆ THỐNG\n• Lưới hệ thống: 100%\n• Luồng câu cá: CHUẨN THỨ TỰ 3 BƯỚC\n• Lọc mục tiêu: BÁN KÍNH SPATIAL QUERY\n• Bộ đệm FPS: ĐƯỢC BẢO VỆ\n\n≫ TRẠNG THÁI KÊNH\n• Kênh 01: TRỰC TUYẾN"
 
 -- ====================== THANH NHẠC ======================
 local MusicBarContainer = Instance.new("Frame", Main)
@@ -911,39 +910,49 @@ local function clickBtn(keys)
     return false
 end
 
--- HÀM QUÉT CÁ MỚI - LOẠI BỎ TOÀN BỘ VẬT PHẨM VÀ NGƯỜI CHƠI TRÁNH QUÉT NHẦM
+-- =========================================================
+-- HÀM QUÉT CÁ MỚI: QUÉT TRONG BÁN KÍNH ĐỂ TRÁNH GIẬT LAG FPS
+-- =========================================================
 local function findActiveFishTarget()
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not root then return nil end
 
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj and (obj:IsA("Model") or obj:IsA("BasePart")) then
-            -- Bỏ qua nếu thuộc nhân vật người chơi hoặc người chơi khác
-            if obj:IsDescendantOf(char) then continue end
-            if Players:GetPlayerFromCharacter(obj:IsA("Model") and obj or obj.Parent) then continue end
+    local closestFish = nil
+    local minDistance = 45 -- Bán kính quét tối đa xung quanh nhân vật (studs)
 
-            local name = string.lower(obj.Name)
-            -- Bỏ qua trang bị, cần câu, mồi câu và merchant
-            if name:find("rod") or name:find("cần") or name:find("bait") or name:find("mồi") or name:find("merchant") then
-                continue
-            end
+    local overlapParams = OverlapParams.new()
+    overlapParams.FilterType = RaycastFilterType.Exclude
+    overlapParams.FilterDescendantsInstances = {char}
 
-            -- Chỉ chọn thực thể cá/mob đang xuất hiện dưới nước
-            if name:find("fish") or name:find("catch") or name:find("shark") or name:find("whale") or name:find("mob") or name:find("boss") then
-                local part = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildOfClass("Part")) or obj
-                if part and part:IsA("BasePart") then
-                    if (part.Position - root.Position).Magnitude < 40 then
-                        return part
+    local nearbyParts = Workspace:GetPartBoundsInRadius(root.Position, minDistance, overlapParams)
+
+    for _, part in ipairs(nearbyParts) do
+        local parentModel = part:FindFirstAncestorOfClass("Model") or part.Parent
+        if parentModel and not Players:GetPlayerFromCharacter(parentModel) then
+            local name = string.lower(part.Name .. " " .. parentModel.Name)
+            
+            -- Lọc bỏ cần câu, mồi câu, merchant
+            local isIgnored = name:find("rod") or name:find("cần") or name:find("bait") or name:find("mồi") or name:find("merchant")
+            
+            if not isIgnored then
+                if name:find("fish") or name:find("catch") or name:find("shark") or name:find("whale") or name:find("mob") or name:find("boss") then
+                    local dist = (part.Position - root.Position).Magnitude
+                    if dist < minDistance then
+                        minDistance = dist
+                        closestFish = part
                     end
                 end
             end
         end
     end
-    return nil
+
+    return closestFish
 end
 
--- VÒNG LẶP CÂU CÁ - ĐẢM BẢO CHUẨN LUỒNG 3 BƯỚC
+-- =========================================================
+-- VÒNG LẶP CÂU CÁ - ĐẢM BẢO CHUẨN LUỒNG 3 BƯỚC + BĂM TRÁI/PHẢI CÁ
+-- =========================================================
 task.spawn(function()
     local skillsList = {
         {key = Enum.KeyCode.Z, index = 1}, {key = Enum.KeyCode.X, index = 2},
@@ -1039,34 +1048,33 @@ task.spawn(function()
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game); task.wait(0.1)
                 end
 
-                -- [BƯỚC 1: THẢ CẦU CÂU TỨC THÌ (MUST RUN FIRST)]
+                -- [BƯỚC 1: THẢ CẦU CÂU TỨC THÌ]
                 local vp = Camera.ViewportSize
                 local castX, castY = vp.X / 2, vp.Y / 2 - 80
                 
-                -- Nhấn giữ để ném cần câu
                 VirtualInputManager:SendMouseButtonEvent(castX, castY, 0, true, game, 1)
                 if activeTool then pcall(function() activeTool:Activate() end) end
-                task.wait(0.8) -- Thời gian tích lực ném
+                task.wait(0.8)
                 VirtualInputManager:SendMouseButtonEvent(castX, castY, 0, false, game, 1)
 
                 -- [BƯỚC 2: CHỜ CÁ CẮN CÂU]
-                task.wait(0.4) -- Đợi lưỡi câu chạm nước
+                task.wait(0.4)
                 local caughtFishTarget = nil
                 local waitBiteStart = tick()
                 
-                -- Đợi cá xuất hiện trong khoảng 6 giây
                 while isRunning and not isSellingFish and (tick() - waitBiteStart < 6.0) do
                     caughtFishTarget = findActiveFishTarget()
                     if caughtFishTarget then break end
                     task.wait(0.05)
                 end
 
-                -- [BƯỚC 3: BĂM CÁ KHI CÁ ĐÃ CẮN CÂU]
+                -- [BƯỚC 3: BĂM CÁ ĐA PHẠM VI TRÁI/PHẢI/TRÊN/DƯỚI KHỦNG]
                 if caughtFishTarget then
                     isFightingFish = true
                     pcall(function()
                         local fishFightStart = tick()
-                        local offsetDistance = 20
+                        local offsetDistance = 25 -- Khoảng cách dải nhấp chuột quanh tâm cá (pixels)
+                        local inset = GuiService:GetGuiInset()
                         local lastValidX, lastValidY = vp.X / 2, vp.Y / 2
                         
                         while isRunning and not isSellingFish and (tick() - fishFightStart < 12) do
@@ -1078,41 +1086,56 @@ task.spawn(function()
                             end
                             
                             local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-                            if onScreen then lastValidX, lastValidY = screenPos.X, screenPos.Y end
+                            if onScreen then 
+                                lastValidX = screenPos.X + inset.X
+                                lastValidY = screenPos.Y + inset.Y
+                            end
+                            
                             local cx, cy = lastValidX, lastValidY
                             VirtualInputManager:SendMouseMoveEvent(cx, cy, game)
                             
-                            local attackOffsets = {{x=cx,y=cy-offsetDistance}, {x=cx-offsetDistance,y=cy}, {x=cx+offsetDistance,y=cy}, {x=cx,y=cy+offsetDistance}}
+                            -- Danh sách tọa độ bao phủ: Trái, Phải, Trên, Dưới & Tâm
+                            local attackOffsets = {
+                                {x = cx - offsetDistance, y = cy}, -- Trái
+                                {x = cx + offsetDistance, y = cy}, -- Phải
+                                {x = cx, y = cy - offsetDistance}, -- Trên
+                                {x = cx, y = cy + offsetDistance}, -- Dưới
+                                {x = cx, y = cy}                    -- Tâm
+                            }
+                            
                             for _, pt in ipairs(attackOffsets) do
                                 if not isRunning or isSellingFish then break end
-                                VirtualInputManager:SendMouseButtonEvent(pt.x, pt.y, 0, true, game, 1); task.wait(0.008)
-                                VirtualInputManager:SendMouseButtonEvent(pt.x, pt.y, 0, false, game, 1); task.wait(0.008)
+                                VirtualInputManager:SendMouseButtonEvent(pt.x, pt.y, 0, true, game, 1)
+                                task.wait(0.006)
+                                VirtualInputManager:SendMouseButtonEvent(pt.x, pt.y, 0, false, game, 1)
+                                task.wait(0.006)
                             end
                             
+                            -- Kích hoạt kỹ năng phím ảo nếu có
                             if tick() - lastSkillTick > 1.2 then
                                 lastSkillTick = tick()
                                 pcall(function()
                                     for _, skill in ipairs(skillsList) do
                                         if not isRunning or isSellingFish then break end
-                                        VirtualInputManager:SendKeyEvent(true, skill.key, false, game); task.wait(0.05)
-                                        VirtualInputManager:SendKeyEvent(false, skill.key, false, game); task.wait(0.05)
+                                        VirtualInputManager:SendKeyEvent(true, skill.key, false, game); task.wait(0.03)
+                                        VirtualInputManager:SendKeyEvent(false, skill.key, false, game); task.wait(0.03)
+                                        
                                         local btn = markerButtons[skill.index]
-                                        local inset = GuiService:GetGuiInset()
                                         if btn and MarkersGui.Enabled then
                                             local pos, sz = btn.AbsolutePosition, btn.AbsoluteSize
-                                            VirtualInputManager:SendMouseButtonEvent(pos.X+sz.X/2+inset.X, pos.Y+sz.Y/2+inset.Y, 0, true, game, 1); task.wait(0.05)
-                                            VirtualInputManager:SendMouseButtonEvent(pos.X+sz.X/2+inset.X, pos.Y+sz.Y/2+inset.Y, 0, false, game, 1); task.wait(0.05)
+                                            VirtualInputManager:SendMouseButtonEvent(pos.X+sz.X/2+inset.X, pos.Y+sz.Y/2+inset.Y, 0, true, game, 1); task.wait(0.03)
+                                            VirtualInputManager:SendMouseButtonEvent(pos.X+sz.X/2+inset.X, pos.Y+sz.Y/2+inset.Y, 0, false, game, 1); task.wait(0.03)
                                         end
                                     end
                                 end)
                             end
-                            task.wait(0.03)
+                            task.wait(0.02)
                         end
                     end)
                     isFightingFish = false
                 end
                 
-                task.wait(0.3) -- Nghỉ ngắn trước lượt ném kế tiếp
+                task.wait(0.3)
             end
         end
     end
