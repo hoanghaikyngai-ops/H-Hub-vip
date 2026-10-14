@@ -17,7 +17,7 @@
 ------------------------------------------------------------
 -- CẤU HÌNH
 ------------------------------------------------------------
-local MUSIC_ID        = 136796809523895 -- ID nhạc nền
+local MUSIC_ID        = 139747933972576 -- ID nhạc nền
 local MUSIC_VOL       = 1
 local DURATION        = 40              -- tổng thời gian intro (giây)
 local USE_PLAYERGUI   = true            -- true: PlayerGui | false: gethui/CoreGui
