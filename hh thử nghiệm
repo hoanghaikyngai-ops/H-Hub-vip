@@ -1,5 +1,5 @@
 --[[
-    INTRO "GOJO VS SUKUNA" v3 (hiệu ứng thuần Lua)
+    INTRO "GOJO VS SUKUNA" v3 (hiệu ứng thuần Lua - Đã tối ưu + Tua nhạc 2:43)
 
     Bên trái = GOJO : quả cầu XANH + quả cầu ĐỎ xoay quanh nhau, va chạm -> hợp nhất thành quả cầu TÍM
     Bên phải = SUKUNA : một NGÔI NHÀ NHỎ (đền) phát sáng đỏ, các vệt chém TOẢ RA từ ngôi nhà
@@ -19,7 +19,7 @@
 ------------------------------------------------------------
 -- CẤU HÌNH
 ------------------------------------------------------------
-local MUSIC_ID        = 136796809523895 -- ID nhạc nền
+local MUSIC_ID        = 110396752508363 -- ID nhạc nền mới
 local MUSIC_VOL       = 1
 local DURATION        = 40              -- tổng thời gian intro (giây)
 local USE_PLAYERGUI   = true            -- true: PlayerGui | false: gethui/CoreGui
@@ -80,9 +80,8 @@ local TEAR_ANGLE = -22      -- góc đường xé (độ)
 local GOJO_X, GOJO_Y   = 0.20, 0.50   -- vị trí quả cầu của Gojo
 local HOUSE_X, HOUSE_Y = 0.80, 0.55   -- vị trí ngôi nhà của Sukuna
 
--- Nạp ảnh + in log để biết ảnh có tải được không.
--- Nếu ID là Decal thì thử đổi sang ID Image thật (cần executor hỗ trợ game:GetObjects).
 local function setupImage(label, id, name)
+    if id == 0 then return end
     task.spawn(function()
         local ok, objs = pcall(function() return game:GetObjects("rbxassetid://" .. tostring(id)) end)
         if ok and type(objs) == "table" and objs[1] then
@@ -102,9 +101,6 @@ local function setupImage(label, id, name)
         pcall(function()
             ContentProvider:PreloadAsync({label}, function(assetId, status)
                 print("[Intro] Anh " .. name .. " (" .. tostring(assetId) .. "): " .. tostring(status))
-                if status ~= Enum.AssetFetchStatus.Success then
-                    warn("[Intro] Anh " .. name .. " KHONG TAI DUOC (ID " .. tostring(id) .. ") - co the la ID Decal, anh chua public hoac bi kiem duyet")
-                end
             end)
         end)
     end)
@@ -122,23 +118,31 @@ local backdrop = new("Frame", {
     Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(3, 3, 8), BorderSizePixel = 0,
 }, gui)
 
--- root là CanvasGroup: mờ dần cả intro bằng GroupTransparency, rung màn hình bằng Position
 local root = new("CanvasGroup", {
     Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0,
     GroupTransparency = 1,
 }, gui)
 
--- Thứ tự lớp (ZIndex) trong root:
--- fx(5) < reveal(9) < 2 mảnh trắng(10) < slashLayer(11) < loading 2 bên(12-14) < thanh điện ảnh(20) < flash(30)
 local fx = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 5}, root)
 
+------------------------------------------------------------
+-- SOUND (Phát nhạc và tự động tua từ phút 2:43 / 163s)
+------------------------------------------------------------
 local sound = new("Sound", {
     SoundId = "rbxassetid://" .. tostring(MUSIC_ID), Volume = MUSIC_VOL, Looped = true,
 }, gui)
+
 sound:Play()
 
+task.spawn(function()
+    if sound.TimeLength == 0 then
+        sound.Loaded:Wait()
+    end
+    sound.TimePosition = 163 -- 2 phút 43 giây
+end)
+
 ------------------------------------------------------------
--- NỀN: nửa xanh (trái) + nửa đỏ (phải)
+-- NỀN
 ------------------------------------------------------------
 local leftBg = new("Frame", {
     Size = UDim2.fromScale(0.5, 1), BackgroundColor3 = BLUE, BorderSizePixel = 0, ZIndex = 1,
@@ -156,7 +160,7 @@ new("UIGradient", {
 }, rightBg)
 
 ------------------------------------------------------------
--- ẢNH NHÂN VẬT LÚC ĐẦU
+-- ẢNH NHÂN VẬT
 ------------------------------------------------------------
 local gojoImg, sukunaImg
 if GOJO_IMAGE_ID ~= 0 then
@@ -196,7 +200,6 @@ local function makeOrb(color)
     new("UICorner", {CornerRadius = UDim.new(1, 0)}, core)
 
     local orb = {}
-    -- x, y: vị trí theo scale; ox, oy: lệch thêm theo pixel
     function orb.update(x, y, size, intensity, ox, oy)
         ox, oy = ox or 0, oy or 0
         for i, f in ipairs(layers) do
@@ -212,13 +215,13 @@ local function makeOrb(color)
     return orb
 end
 
-local blueOrb     = makeOrb(BLUE)    -- Gojo: "xanh"
-local redOrb      = makeOrb(RED)     -- Gojo: "đỏ"
-local purpleOrb   = makeOrb(PURPLE)  -- Gojo: xanh + đỏ hợp nhất
-local houseAura   = makeOrb(RED)     -- hào quang đỏ quanh ngôi nhà của Sukuna
+local blueOrb     = makeOrb(BLUE)
+local redOrb      = makeOrb(RED)
+local purpleOrb   = makeOrb(PURPLE)
+local houseAura   = makeOrb(RED)
 
 ------------------------------------------------------------
--- NGÔI NHÀ NHỎ CỦA SUKUNA (vẽ bằng Frame)
+-- NGÔI NHÀ NHỎ CỦA SUKUNA
 ------------------------------------------------------------
 local function rect(parent, cx, cy, w, h, color, rot, strokeColor)
     local f = new("Frame", {
@@ -241,25 +244,21 @@ do
     local DARK  = Color3.fromRGB(18, 0, 6)
     local DARK2 = Color3.fromRGB(32, 0, 10)
     local DEEP  = Color3.fromRGB(110, 0, 0)
-    -- nền + thân nhà
     rect(house, 150, 272, 250, 14, DARK, 0, RED)
     rect(house, 150, 228, 176, 80, DARK, 0, RED)
-    rect(house, 150, 238, 46, 60, DEEP, 0, RED)            -- cửa
-    rect(house, 78, 228, 10, 80, DARK2, 0, RED)            -- cột trái
-    rect(house, 222, 228, 10, 80, DARK2, 0, RED)           -- cột phải
-    -- mái dưới (2 tấm chéo gặp nhau ở đỉnh)
+    rect(house, 150, 238, 46, 60, DEEP, 0, RED)
+    rect(house, 78, 228, 10, 80, DARK2, 0, RED)
+    rect(house, 222, 228, 10, 80, DARK2, 0, RED)
     rect(house, 80, 156, 150, 14, DARK2, -22, RED)
     rect(house, 220, 156, 150, 14, DARK2, 22, RED)
-    -- thân phụ + mái trên
     rect(house, 150, 118, 44, 34, DARK, 0, RED)
     rect(house, 104, 110, 100, 12, DARK2, -22, RED)
     rect(house, 196, 110, 100, 12, DARK2, 22, RED)
-    -- đỉnh nhọn
     rect(house, 150, 72, 6, 30, RED, 0)
 end
 
 ------------------------------------------------------------
--- VẾT CHÉM (dùng chung cho nhiều giai đoạn)
+-- VẾT CHÉM
 ------------------------------------------------------------
 local slashes = {}
 local function spawnSlash(t, o)
@@ -287,7 +286,6 @@ local function spawnSlash(t, o)
     })
 end
 
--- Vệt chém TOẢ RA từ ngôi nhà (bắt đầu cách nhà một đoạn rồi dài ra phía ngoài)
 local function spawnRadial(t, ang)
     local life = rng:NextNumber(0.35, 0.6)
     local black = rng:NextNumber() < 0.25
@@ -315,7 +313,7 @@ for i = 1, 3 do
 end
 
 ------------------------------------------------------------
--- TÊN 2 BÊN (lúc đầu)
+-- TÊN 2 BÊN
 ------------------------------------------------------------
 local function makeName(text, color, x, y)
     return new("TextLabel", {
@@ -329,7 +327,7 @@ local gojoName   = makeName("GOJO", BLUE, GOJO_X, 0.80)
 local sukunaName = makeName("SUKUNA", RED, HOUSE_X, 0.82)
 
 ------------------------------------------------------------
--- LỚP "LỘ RA" (nằm dưới 2 mảnh trắng): ảnh lãnh địa + chữ tiêu đề
+-- LỚP LỘ RA (REVEAL)
 ------------------------------------------------------------
 local reveal = new("Frame", {
     Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(8, 0, 10),
@@ -366,11 +364,11 @@ end
 titleScale = new("UIScale", {Scale = 1.25}, title)
 
 ------------------------------------------------------------
--- 2 MẢNH TRẮNG (bị xé toạc theo đường chéo)
+-- 2 MẢNH TRẮNG
 ------------------------------------------------------------
 local L = 6000
 local trad = math.rad(TEAR_ANGLE)
-local nx, ny = -math.sin(trad), math.cos(trad)   -- vector pháp tuyến của đường xé
+local nx, ny = -math.sin(trad), math.cos(trad)
 
 local function makeHalf(isA)
     local h = new("Frame", {
@@ -378,7 +376,6 @@ local function makeHalf(isA)
         BackgroundColor3 = WHITE, BackgroundTransparency = 1, BorderSizePixel = 0,
         Rotation = TEAR_ANGLE, ZIndex = 10, Visible = false,
     }, root)
-    -- mép rách: mảnh A viền đen, mảnh B viền đỏ
     local edge = new("Frame", {
         AnchorPoint = V2(0.5, isA and 0 or 1), Position = UDim2.fromScale(0.5, isA and 0 or 1),
         Size = UDim2.new(1, 0, 0, 7), BackgroundColor3 = isA and BLACK or RED,
@@ -411,7 +408,7 @@ local barBot = new("Frame", {
 }, root)
 
 ------------------------------------------------------------
--- VÒNG LOADING + THANH LOADING 2 BÊN
+-- LOADING UI
 ------------------------------------------------------------
 local function makeSide(isLeft)
     local side = new("Frame", {
@@ -466,7 +463,7 @@ end
 local sides = {makeSide(true), makeSide(false)}
 
 ------------------------------------------------------------
--- LỊCH CÁC NHÁT CHÉM XÉ TOẠC MÀN TRẮNG
+-- LỊCH NHÁT CHÉM
 ------------------------------------------------------------
 local tearSeq = {
     {rot = -38, c1 = RED,   c2 = BLACK},
@@ -474,7 +471,7 @@ local tearSeq = {
     {rot = -64, c1 = RED,   c2 = BLACK},
     {rot = 52,  c1 = BLACK, c2 = RED},
     {rot = -12, c1 = RED,   c2 = BLACK},
-    {rot = TEAR_ANGLE, c1 = BLACK, c2 = RED, main = true}, -- nhát chém chính: đường xé
+    {rot = TEAR_ANGLE, c1 = BLACK, c2 = RED, main = true},
 }
 local tearDone = {}
 
@@ -493,21 +490,17 @@ conn = RunService.RenderStepped:Connect(function(dt)
     local t = os.clock() - startTime
     local u = clamp01(t / D)
 
-    -- Mốc thời gian (theo u)
     local T_ORBIT0, T_MERGE, T_EXPLODE = 0.10, 0.60, 0.74
     local T_TEARSLASH, T_TEAR, T_OPEN2, T_OFF, T_END = 0.775, 0.815, 0.86, 0.90, 0.97
 
-    -- Fade vào / ra toàn bộ intro
     root.GroupTransparency = math.max(1 - sm(0, 0.05, u), sm(T_END, 1, u))
     backdrop.BackgroundTransparency = sm(0.98, 1, u)
     sound.Volume = MUSIC_VOL * (1 - sm(T_END, 1, u))
 
-    -- Thanh điện ảnh
     local bar = sm(0, 0.08, u)
     barTop.Position = UDim2.fromScale(0, -0.1 + 0.1 * bar)
     barBot.Position = UDim2.fromScale(0, 1 - 0.1 * bar)
 
-    -- Rung màn hình
     burst = math.max(burst - dt * 40, 0)
     local amp = 0
     if u >= 0.40 and u < T_MERGE then amp = 4 * sm(0.40, T_MERGE, u)
@@ -520,9 +513,7 @@ conn = RunService.RenderStepped:Connect(function(dt)
         root.Position = UDim2.fromOffset(0, 0)
     end
 
-    ----------------------------------------------------
-    -- GOJO: xanh + đỏ xoay quanh nhau rồi va chạm
-    ----------------------------------------------------
+    -- GOJO Orbs
     local gone = 1 - sm(T_MERGE, T_MERGE + 0.03, u)
     local spin = sm(T_ORBIT0, T_MERGE, u)
     theta += dt * (1.5 + 8 * spin)
@@ -533,13 +524,13 @@ conn = RunService.RenderStepped:Connect(function(dt)
     blueOrb.update(GOJO_X, GOJO_Y, osize, oint, ox, oy)
     redOrb.update(GOJO_X, GOJO_Y, osize, oint, -ox, -oy)
 
-    -- Quả cầu TÍM phình to, bay từ chỗ Gojo ra giữa màn hình
+    -- Purple Orb Merge
     local px = clamp01((u - T_MERGE) / (T_EXPLODE - T_MERGE))
     local pSize = (40 + 1300 * px * px) * (1 + 0.06 * math.sin(t * (10 + 20 * px)))
     local pInten = sm(T_MERGE, T_MERGE + 0.05, u) * (1 - sm(T_EXPLODE - 0.002, T_EXPLODE + 0.002, u))
     purpleOrb.update(GOJO_X + (0.5 - GOJO_X) * ease(px), GOJO_Y, pSize, pInten)
 
-    -- Sóng xung kích lúc xanh + đỏ va chạm
+    -- Rings
     local tClash = T_MERGE * D
     for _, r in ipairs(rings) do
         local age = t - tClash - r.delay
@@ -555,9 +546,7 @@ conn = RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    ----------------------------------------------------
-    -- SUKUNA: ngôi nhà nhỏ + vệt chém toả ra
-    ----------------------------------------------------
+    -- Sukuna House
     local grow = sm(0.10, 0.22, u)
     local houseBase = math.clamp(gui.AbsoluteSize.Y / 900, 0.45, 1)
     houseScale.Scale = math.max(houseBase * grow, 0.01)
@@ -578,7 +567,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
         spawnRadial(t, rng:NextNumber(0, 360))
     end
 
-    -- Tên 2 bên + ảnh nhân vật
     local nameT = 1 - sm(0.12, 0.20, u) * gone
     gojoName.TextTransparency = nameT
     sukunaName.TextTransparency = nameT
@@ -593,9 +581,7 @@ conn = RunService.RenderStepped:Connect(function(dt)
         sukunaImg.ImageTransparency = 1 - 0.9 * imgIn
     end
 
-    ----------------------------------------------------
-    -- NỔ -> màn hình trắng xoá
-    ----------------------------------------------------
+    -- Flash
     local fl
     if u < T_EXPLODE - 0.002 then fl = 1
     elseif u < T_EXPLODE + 0.002 then fl = 1 - (u - (T_EXPLODE - 0.002)) / 0.004
@@ -611,9 +597,7 @@ conn = RunService.RenderStepped:Connect(function(dt)
     halfA.BackgroundTransparency = wTrans
     halfB.BackgroundTransparency = wTrans
 
-    ----------------------------------------------------
-    -- Vết chém mảnh đỏ / đen xé toạc màn trắng
-    ----------------------------------------------------
+    -- Tear Slashes
     for i, s in ipairs(tearSeq) do
         if not tearDone[i] and u >= T_TEARSLASH + (i - 1) * 0.0075 then
             tearDone[i] = true
@@ -629,7 +613,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- Đường xé: 2 mảnh trắng tách ra theo đường chéo
     local g = 260 * sm(T_TEAR, T_TEAR + 0.025, u) + 2740 * sm(T_OPEN2, T_OFF, u)
     local wedge = 3 * sm(T_TEAR, T_TEAR + 0.025, u)
     local off = L / 2 + g / 2
@@ -641,9 +624,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
     edgeA.BackgroundTransparency = edgeT
     edgeB.BackgroundTransparency = edgeT
 
-    ----------------------------------------------------
-    -- Chữ GOJO VS SUKUNA hiện ở chỗ rách + ảnh lãnh địa
-    ----------------------------------------------------
     local ts = sm(T_TEAR + 0.005, T_TEAR + 0.025, u)
     if title:IsA("TextLabel") then
         title.TextTransparency = 1 - ts
@@ -656,7 +636,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
         domainScale.Scale = 1.2 - 0.2 * sm(T_TEAR, T_END, u)
     end
 
-    -- Gojo bị chém liên tục bởi vết chém đỏ của Sukuna (nửa trái màn hình)
     if u >= 0.83 and u < T_END - 0.005 and t - lastDomain > 1 / 9 then
         lastDomain = t
         domainCount += 1
@@ -671,7 +650,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
         burst = math.max(burst, 8)
     end
 
-    -- Cập nhật tất cả vết chém
     for i = #slashes, 1, -1 do
         local s = slashes[i]
         local age = (t - s.born) / s.life
@@ -686,7 +664,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
             s.f.Size = UDim2.fromOffset(curLen, s.th * (1 - fadeK) + 1)
             s.f.BackgroundTransparency = fadeK ^ 2
             if s.radial then
-                -- đầu gần giữ nguyên cách nhà r0, đầu xa vươn ra ngoài
                 local r = s.radial
                 local d = r.r0 + curLen / 2
                 s.f.Position = UDim2.new(r.cx, math.cos(r.ang) * d, r.cy, math.sin(r.ang) * d)
@@ -694,18 +671,12 @@ conn = RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    ----------------------------------------------------
-    -- Loading UI
-    ----------------------------------------------------
     for _, s in ipairs(sides) do
         s.arcGrad.Rotation = (t * 360) % 360 * s.dir
         s.pct.Text = string.format("%d%%", math.floor(u * 100))
         s.fill.Size = UDim2.fromScale(1, u)
     end
 
-    ----------------------------------------------------
-    -- Kết thúc
-    ----------------------------------------------------
     if u >= 1 and not finished then
         finished = true
         conn:Disconnect()
@@ -720,5 +691,5 @@ end)
 
 if not __ok then
     warn("[Intro] LOI: " .. tostring(__err))
-    task.spawn(RunMainScript) -- intro hỏng thì vẫn chạy script chính
+    task.spawn(RunMainScript)
 end
