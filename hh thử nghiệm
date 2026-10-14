@@ -1,29 +1,31 @@
 --[[
-    INTRO "GOJO VS SUKUNA" v2 (hiệu ứng thuần Lua)
+    INTRO "GOJO VS SUKUNA" v3 (hiệu ứng thuần Lua)
+
+    Bên trái = GOJO : quả cầu XANH + quả cầu ĐỎ xoay quanh nhau, va chạm -> hợp nhất thành quả cầu TÍM
+    Bên phải = SUKUNA : một NGÔI NHÀ NHỎ (đền) phát sáng đỏ, các vệt chém TOẢ RA từ ngôi nhà
 
     Timeline (theo % thời lượng DURATION, mặc định 40s):
       0  - 10% : sáng dần, thanh điện ảnh trượt vào
-      10 - 40% : năng lượng XANH (Gojo) trái / ĐỎ + vết chém (Sukuna) phải lớn dần
-      40 - 60% : hai quả cầu lao vào nhau, màn hình rung
-      60 - 74% : xanh + đỏ va chạm -> hợp nhất thành quả cầu TÍM PHÌNH TO dần, rung dữ dội
+      10 - 22% : ngôi nhà của Sukuna hiện lên bên phải, xanh + đỏ của Gojo xuất hiện bên trái
+      10 - 60% : xanh + đỏ xoay quanh nhau, càng lúc càng nhanh và gần; nhà phát sáng, chém toả ra dày dần
+      60 - 74% : xanh + đỏ VA CHẠM -> quả cầu TÍM phình to dần, bay ra giữa, rung dữ dội
       74 - 78% : quả cầu tím NỔ -> màn hình TRẮNG XOÁ
-      78 - 82% : các nhát chém MẢNH chéo ĐỎ và ĐEN của Sukuna chém xé toạc màn trắng
+      78 - 82% : các nhát chém MẢNH chéo ĐỎ và ĐEN chém xé toạc màn trắng
       82 - 86% : màn trắng bị XÉ TOẠC thành 2 mảnh, chỗ rách hiện chữ GOJO VS SUKUNA
-      86 - 97% : 2 mảnh trắng văng đi, lộ ảnh cả hai tung lãnh địa; Gojo bị chém liên tục bởi vết chém đỏ
+      86 - 97% : 2 mảnh văng đi, lộ ảnh cả hai tung lãnh địa; Gojo bị chém liên tục bởi vết chém đỏ
       97 -100% : mờ dần -> chạy script chính
-    Vòng loading + thanh loading chạy ở 2 bên trái/phải suốt intro.
 ]]
 
 ------------------------------------------------------------
 -- CẤU HÌNH
 ------------------------------------------------------------
-local MUSIC_ID        = 139747933972576 -- ID nhạc nền
+local MUSIC_ID        = 136796809523895 -- ID nhạc nền
 local MUSIC_VOL       = 1
 local DURATION        = 40              -- tổng thời gian intro (giây)
 local USE_PLAYERGUI   = true            -- true: PlayerGui | false: gethui/CoreGui
 
-local GOJO_IMAGE_ID   = 122542562057055 -- ảnh Gojo (lúc đầu, trượt vào từ trái)
-local SUKUNA_IMAGE_ID = 138780255818502 -- ảnh Sukuna (lúc đầu, trượt vào từ phải)
+local GOJO_IMAGE_ID   = 122542562057055 -- ảnh Gojo (trượt vào từ trái)
+local SUKUNA_IMAGE_ID = 138780255818502 -- ảnh Sukuna (trượt vào từ phải)
 local DOMAIN_IMAGE_ID = 79840533071493  -- ảnh cả hai tung lãnh địa (lộ ra sau khi màn trắng bị xé)
 local TITLE_IMAGE_ID  = 0               -- (tuỳ chọn) ảnh chữ GOJO VS SUKUNA. 0 = dùng chữ viết bằng Lua
 
@@ -37,9 +39,10 @@ local __ok, __err = pcall(function()
 ------------------------------------------------------------
 -- SERVICES + HELPERS
 ------------------------------------------------------------
-local Players    = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local player     = Players.LocalPlayer
+local Players         = game:GetService("Players")
+local RunService      = game:GetService("RunService")
+local ContentProvider = game:GetService("ContentProvider")
+local player          = Players.LocalPlayer
 
 local function getGuiParent()
     if USE_PLAYERGUI then
@@ -73,7 +76,39 @@ local RED    = Color3.fromRGB(255, 45, 45)
 local PURPLE = Color3.fromRGB(170, 70, 255)
 local rng = Random.new(os.time())
 
-local TEAR_ANGLE = -22   -- góc đường xé (độ)
+local TEAR_ANGLE = -22      -- góc đường xé (độ)
+local GOJO_X, GOJO_Y   = 0.20, 0.50   -- vị trí quả cầu của Gojo
+local HOUSE_X, HOUSE_Y = 0.80, 0.55   -- vị trí ngôi nhà của Sukuna
+
+-- Nạp ảnh + in log để biết ảnh có tải được không.
+-- Nếu ID là Decal thì thử đổi sang ID Image thật (cần executor hỗ trợ game:GetObjects).
+local function setupImage(label, id, name)
+    task.spawn(function()
+        local ok, objs = pcall(function() return game:GetObjects("rbxassetid://" .. tostring(id)) end)
+        if ok and type(objs) == "table" and objs[1] then
+            local o = objs[1]
+            local tex
+            if o:IsA("Decal") or o:IsA("Texture") then
+                tex = o.Texture
+            elseif o:IsA("ImageLabel") or o:IsA("ImageButton") then
+                tex = o.Image
+            end
+            if tex and tex ~= "" then
+                label.Image = tex
+                print("[Intro] Anh " .. name .. ": da doi sang Image -> " .. tex)
+            end
+            pcall(function() o:Destroy() end)
+        end
+        pcall(function()
+            ContentProvider:PreloadAsync({label}, function(assetId, status)
+                print("[Intro] Anh " .. name .. " (" .. tostring(assetId) .. "): " .. tostring(status))
+                if status ~= Enum.AssetFetchStatus.Success then
+                    warn("[Intro] Anh " .. name .. " KHONG TAI DUOC (ID " .. tostring(id) .. ") - co the la ID Decal, anh chua public hoac bi kiem duyet")
+                end
+            end)
+        end)
+    end)
+end
 
 ------------------------------------------------------------
 -- GUI GỐC
@@ -130,6 +165,7 @@ if GOJO_IMAGE_ID ~= 0 then
         BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(GOJO_IMAGE_ID),
         ScaleType = Enum.ScaleType.Fit, ImageTransparency = 1, ZIndex = 2,
     }, fx)
+    setupImage(gojoImg, GOJO_IMAGE_ID, "GOJO")
 end
 if SUKUNA_IMAGE_ID ~= 0 then
     sukunaImg = new("ImageLabel", {
@@ -137,6 +173,7 @@ if SUKUNA_IMAGE_ID ~= 0 then
         BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(SUKUNA_IMAGE_ID),
         ScaleType = Enum.ScaleType.Fit, ImageTransparency = 1, ZIndex = 2,
     }, fx)
+    setupImage(sukunaImg, SUKUNA_IMAGE_ID, "SUKUNA")
 end
 
 ------------------------------------------------------------
@@ -159,23 +196,67 @@ local function makeOrb(color)
     new("UICorner", {CornerRadius = UDim.new(1, 0)}, core)
 
     local orb = {}
-    function orb.update(x, y, size, intensity)
+    -- x, y: vị trí theo scale; ox, oy: lệch thêm theo pixel
+    function orb.update(x, y, size, intensity, ox, oy)
+        ox, oy = ox or 0, oy or 0
         for i, f in ipairs(layers) do
             local s = size * (1 + (i - 1) * 0.55)
-            f.Position = UDim2.fromScale(x, y)
+            f.Position = UDim2.new(x, ox, y, oy)
             f.Size = UDim2.fromOffset(s, s)
             f.BackgroundTransparency = 1 - math.clamp(intensity * 0.32 / (i ^ 0.5), 0, 0.9)
         end
-        core.Position = UDim2.fromScale(x, y)
+        core.Position = UDim2.new(x, ox, y, oy)
         core.Size = UDim2.fromOffset(size * 0.7, size * 0.7)
         core.BackgroundTransparency = 1 - clamp01(intensity)
     end
     return orb
 end
 
-local gojoOrb   = makeOrb(BLUE)
-local sukunaOrb = makeOrb(RED)
-local purpleOrb = makeOrb(PURPLE)
+local blueOrb     = makeOrb(BLUE)    -- Gojo: "xanh"
+local redOrb      = makeOrb(RED)     -- Gojo: "đỏ"
+local purpleOrb   = makeOrb(PURPLE)  -- Gojo: xanh + đỏ hợp nhất
+local houseAura   = makeOrb(RED)     -- hào quang đỏ quanh ngôi nhà của Sukuna
+
+------------------------------------------------------------
+-- NGÔI NHÀ NHỎ CỦA SUKUNA (vẽ bằng Frame)
+------------------------------------------------------------
+local function rect(parent, cx, cy, w, h, color, rot, strokeColor)
+    local f = new("Frame", {
+        AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromOffset(cx, cy), Size = UDim2.fromOffset(w, h),
+        BackgroundColor3 = color, BorderSizePixel = 0, Rotation = rot or 0,
+    }, parent)
+    if strokeColor then
+        new("UIStroke", {Thickness = 2, Color = strokeColor}, f)
+    end
+    return f
+end
+
+local house = new("Frame", {
+    AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(HOUSE_X, HOUSE_Y), Size = UDim2.fromOffset(300, 300),
+    BackgroundTransparency = 1, ZIndex = 6,
+}, fx)
+local houseScale = new("UIScale", {Scale = 0.01}, house)
+
+do
+    local DARK  = Color3.fromRGB(18, 0, 6)
+    local DARK2 = Color3.fromRGB(32, 0, 10)
+    local DEEP  = Color3.fromRGB(110, 0, 0)
+    -- nền + thân nhà
+    rect(house, 150, 272, 250, 14, DARK, 0, RED)
+    rect(house, 150, 228, 176, 80, DARK, 0, RED)
+    rect(house, 150, 238, 46, 60, DEEP, 0, RED)            -- cửa
+    rect(house, 78, 228, 10, 80, DARK2, 0, RED)            -- cột trái
+    rect(house, 222, 228, 10, 80, DARK2, 0, RED)           -- cột phải
+    -- mái dưới (2 tấm chéo gặp nhau ở đỉnh)
+    rect(house, 80, 156, 150, 14, DARK2, -22, RED)
+    rect(house, 220, 156, 150, 14, DARK2, 22, RED)
+    -- thân phụ + mái trên
+    rect(house, 150, 118, 44, 34, DARK, 0, RED)
+    rect(house, 104, 110, 100, 12, DARK2, -22, RED)
+    rect(house, 196, 110, 100, 12, DARK2, 22, RED)
+    -- đỉnh nhọn
+    rect(house, 150, 72, 6, 30, RED, 0)
+end
 
 ------------------------------------------------------------
 -- VẾT CHÉM (dùng chung cho nhiều giai đoạn)
@@ -202,7 +283,19 @@ local function spawnSlash(t, o)
     local life = o.life or rng:NextNumber(0.25, 0.45)
     table.insert(slashes, {
         f = f, born = t, life = life, len = len, th = o.th or 5,
-        drawT = o.drawT or (life / 3), hold = o.hold or 0,
+        drawT = o.drawT or (life / 3), hold = o.hold or 0, radial = o.radial,
+    })
+end
+
+-- Vệt chém TOẢ RA từ ngôi nhà (bắt đầu cách nhà một đoạn rồi dài ra phía ngoài)
+local function spawnRadial(t, ang)
+    local life = rng:NextNumber(0.35, 0.6)
+    local black = rng:NextNumber() < 0.25
+    spawnSlash(t, {
+        parent = fx, lenMul = rng:NextNumber(0.25, 0.55), th = rng:NextNumber(4, 7),
+        rot = ang, c1 = black and BLACK or RED, c2 = black and RED or WHITE,
+        life = life, drawT = life / 3, hold = 0,
+        radial = {cx = HOUSE_X, cy = HOUSE_Y, ang = math.rad(ang), r0 = rng:NextNumber(70, 130)},
     })
 end
 
@@ -213,7 +306,7 @@ local rings = {}
 local ringColors = {PURPLE, WHITE, RED}
 for i = 1, 3 do
     local f = new("Frame", {
-        AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(0, 0),
+        AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(GOJO_X, GOJO_Y), Size = UDim2.fromOffset(0, 0),
         BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 7, Visible = false,
     }, fx)
     new("UICorner", {CornerRadius = UDim.new(1, 0)}, f)
@@ -224,15 +317,16 @@ end
 ------------------------------------------------------------
 -- TÊN 2 BÊN (lúc đầu)
 ------------------------------------------------------------
-local function makeName(text, color)
+local function makeName(text, color, x, y)
     return new("TextLabel", {
-        AnchorPoint = V2(0.5, 0.5), Size = UDim2.fromOffset(300, 40), BackgroundTransparency = 1,
+        AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(x, y),
+        Size = UDim2.fromOffset(300, 40), BackgroundTransparency = 1,
         Text = text, Font = Enum.Font.GothamBold, TextSize = 28, TextColor3 = color,
         TextTransparency = 1, ZIndex = 10,
     }, fx)
 end
-local gojoName   = makeName("GOJO", BLUE)
-local sukunaName = makeName("SUKUNA", RED)
+local gojoName   = makeName("GOJO", BLUE, GOJO_X, 0.80)
+local sukunaName = makeName("SUKUNA", RED, HOUSE_X, 0.82)
 
 ------------------------------------------------------------
 -- LỚP "LỘ RA" (nằm dưới 2 mảnh trắng): ảnh lãnh địa + chữ tiêu đề
@@ -250,6 +344,7 @@ if DOMAIN_IMAGE_ID ~= 0 then
         ScaleType = Enum.ScaleType.Crop, ZIndex = 1,
     }, reveal)
     domainScale = new("UIScale", {Scale = 1.2}, domainImg)
+    setupImage(domainImg, DOMAIN_IMAGE_ID, "LANH DIA")
 end
 
 local title, titleScale
@@ -259,6 +354,7 @@ if TITLE_IMAGE_ID ~= 0 then
         BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(TITLE_IMAGE_ID),
         ScaleType = Enum.ScaleType.Fit, ImageTransparency = 1, Rotation = TEAR_ANGLE, ZIndex = 3,
     }, reveal)
+    setupImage(title, TITLE_IMAGE_ID, "TIEU DE")
 else
     title = new("TextLabel", {
         AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0.95, 0, 0, 110),
@@ -391,13 +487,14 @@ local conn
 local finished = false
 local lastSlash, lastDomain, domainCount = 0, 0, 0
 local burst = 0
+local theta = 0
 
 conn = RunService.RenderStepped:Connect(function(dt)
     local t = os.clock() - startTime
     local u = clamp01(t / D)
 
     -- Mốc thời gian (theo u)
-    local T_MOVE0, T_MERGE, T_EXPLODE = 0.40, 0.60, 0.74
+    local T_ORBIT0, T_MERGE, T_EXPLODE = 0.10, 0.60, 0.74
     local T_TEARSLASH, T_TEAR, T_OPEN2, T_OFF, T_END = 0.775, 0.815, 0.86, 0.90, 0.97
 
     -- Fade vào / ra toàn bộ intro
@@ -413,8 +510,8 @@ conn = RunService.RenderStepped:Connect(function(dt)
     -- Rung màn hình
     burst = math.max(burst - dt * 40, 0)
     local amp = 0
-    if u >= T_MOVE0 and u < T_MERGE then amp = 5 * sm(T_MOVE0, T_MERGE, u)
-    elseif u >= T_MERGE and u < T_EXPLODE then amp = 5 + 25 * sm(T_MERGE, T_EXPLODE, u)
+    if u >= 0.40 and u < T_MERGE then amp = 4 * sm(0.40, T_MERGE, u)
+    elseif u >= T_MERGE and u < T_EXPLODE then amp = 4 + 26 * sm(T_MERGE, T_EXPLODE, u)
     elseif u >= T_EXPLODE and u < 0.77 then amp = 30 * (1 - sm(T_EXPLODE, 0.77, u)) end
     amp += burst
     if amp > 0 then
@@ -424,49 +521,25 @@ conn = RunService.RenderStepped:Connect(function(dt)
     end
 
     ----------------------------------------------------
-    -- Giai đoạn đầu: orb xanh / đỏ, ảnh, tên, vết chém Sukuna
+    -- GOJO: xanh + đỏ xoay quanh nhau rồi va chạm
     ----------------------------------------------------
-    local move = sm(T_MOVE0, T_MERGE, u)
     local gone = 1 - sm(T_MERGE, T_MERGE + 0.03, u)
-    local size = (40 + 180 * sm(0.10, 0.40, u) + 60 * move) * gone * (1 + 0.06 * math.sin(t * 8))
-    local inten = sm(0.05, 0.30, u) * gone
-    local y = 0.5 + 0.03 * math.sin(t * 2)
-    gojoOrb.update(0.2 + 0.30 * move, y, size, inten)
-    sukunaOrb.update(0.8 - 0.30 * move, y, size, inten)
+    local spin = sm(T_ORBIT0, T_MERGE, u)
+    theta += dt * (1.5 + 8 * spin)
+    local orbitR = 200 * (1 - 0.92 * spin)
+    local ox, oy = math.cos(theta) * orbitR, math.sin(theta) * orbitR * 0.7
+    local osize = (40 + 90 * sm(0.08, 0.40, u) + 30 * sm(0.40, T_MERGE, u)) * gone * (1 + 0.06 * math.sin(t * 8))
+    local oint = sm(0.05, 0.30, u) * gone
+    blueOrb.update(GOJO_X, GOJO_Y, osize, oint, ox, oy)
+    redOrb.update(GOJO_X, GOJO_Y, osize, oint, -ox, -oy)
 
-    local nameT = 1 - sm(0.12, 0.20, u) * gone
-    gojoName.Position = UDim2.fromScale(0.2 + 0.30 * move, 0.74)
-    sukunaName.Position = UDim2.fromScale(0.8 - 0.30 * move, 0.74)
-    gojoName.TextTransparency = nameT
-    sukunaName.TextTransparency = nameT
-
-    local imgIn = sm(0.10, 0.30, u) * gone
-    if gojoImg then
-        gojoImg.Position = UDim2.fromScale(-0.4 + 0.4 * sm(0.10, 0.30, u) + 0.1 * move, 0.5)
-        gojoImg.ImageTransparency = 1 - 0.9 * imgIn
-    end
-    if sukunaImg then
-        sukunaImg.Position = UDim2.fromScale(1.4 - 0.4 * sm(0.10, 0.30, u) - 0.1 * move, 0.5)
-        sukunaImg.ImageTransparency = 1 - 0.9 * imgIn
-    end
-
-    local rate = 0
-    if u >= 0.15 and u < T_MOVE0 then rate = 2
-    elseif u >= T_MOVE0 and u < T_MERGE then rate = 7 end
-    if rate > 0 and t - lastSlash > 1 / rate then
-        lastSlash = t
-        spawnSlash(t, {x1 = 0.5, x2 = 0.95})
-    end
-
-    ----------------------------------------------------
-    -- Quả cầu TÍM phình to khi xanh + đỏ va chạm
-    ----------------------------------------------------
+    -- Quả cầu TÍM phình to, bay từ chỗ Gojo ra giữa màn hình
     local px = clamp01((u - T_MERGE) / (T_EXPLODE - T_MERGE))
     local pSize = (40 + 1300 * px * px) * (1 + 0.06 * math.sin(t * (10 + 20 * px)))
     local pInten = sm(T_MERGE, T_MERGE + 0.05, u) * (1 - sm(T_EXPLODE - 0.002, T_EXPLODE + 0.002, u))
-    purpleOrb.update(0.5, 0.5, pSize, pInten)
+    purpleOrb.update(GOJO_X + (0.5 - GOJO_X) * ease(px), GOJO_Y, pSize, pInten)
 
-    -- Sóng xung kích lúc va chạm
+    -- Sóng xung kích lúc xanh + đỏ va chạm
     local tClash = T_MERGE * D
     for _, r in ipairs(rings) do
         local age = t - tClash - r.delay
@@ -480,6 +553,44 @@ conn = RunService.RenderStepped:Connect(function(dt)
         else
             r.f.Visible = false
         end
+    end
+
+    ----------------------------------------------------
+    -- SUKUNA: ngôi nhà nhỏ + vệt chém toả ra
+    ----------------------------------------------------
+    local grow = sm(0.10, 0.22, u)
+    local houseBase = math.clamp(gui.AbsoluteSize.Y / 900, 0.45, 1)
+    houseScale.Scale = math.max(houseBase * grow, 0.01)
+    local jit = 1 + 5 * sm(0.4, T_EXPLODE, u)
+    house.Position = UDim2.new(
+        HOUSE_X, (rng:NextNumber() - 0.5) * jit,
+        HOUSE_Y, (1 - grow) * 40 + (rng:NextNumber() - 0.5) * jit
+    )
+    local aSize = (140 + 160 * sm(0.2, T_EXPLODE, u)) * houseBase * grow * (1 + 0.07 * math.sin(t * 9))
+    houseAura.update(HOUSE_X, HOUSE_Y, aSize, (0.4 + 0.6 * sm(0.2, T_EXPLODE, u)) * grow)
+
+    local rate = 0
+    if u >= 0.20 and u < 0.40 then rate = 3
+    elseif u >= 0.40 and u < T_MERGE then rate = 7
+    elseif u >= T_MERGE and u < T_EXPLODE then rate = 12 end
+    if rate > 0 and t - lastSlash > 1 / rate then
+        lastSlash = t
+        spawnRadial(t, rng:NextNumber(0, 360))
+    end
+
+    -- Tên 2 bên + ảnh nhân vật
+    local nameT = 1 - sm(0.12, 0.20, u) * gone
+    gojoName.TextTransparency = nameT
+    sukunaName.TextTransparency = nameT
+
+    local imgIn = sm(0.10, 0.30, u) * gone
+    if gojoImg then
+        gojoImg.Position = UDim2.fromScale(-0.4 + 0.4 * sm(0.10, 0.30, u), 0.5)
+        gojoImg.ImageTransparency = 1 - 0.9 * imgIn
+    end
+    if sukunaImg then
+        sukunaImg.Position = UDim2.fromScale(1.4 - 0.4 * sm(0.10, 0.30, u), 0.5)
+        sukunaImg.ImageTransparency = 1 - 0.9 * imgIn
     end
 
     ----------------------------------------------------
@@ -571,8 +682,15 @@ conn = RunService.RenderStepped:Connect(function(dt)
             local draw = ease(clamp01((t - s.born) / s.drawT))
             local fadeK = 0
             if age > s.hold then fadeK = (age - s.hold) / (1 - s.hold) end
-            s.f.Size = UDim2.fromOffset(s.len * draw, s.th * (1 - fadeK) + 1)
+            local curLen = s.len * draw
+            s.f.Size = UDim2.fromOffset(curLen, s.th * (1 - fadeK) + 1)
             s.f.BackgroundTransparency = fadeK ^ 2
+            if s.radial then
+                -- đầu gần giữ nguyên cách nhà r0, đầu xa vươn ra ngoài
+                local r = s.radial
+                local d = r.r0 + curLen / 2
+                s.f.Position = UDim2.new(r.cx, math.cos(r.ang) * d, r.cy, math.sin(r.ang) * d)
+            end
         end
     end
 
