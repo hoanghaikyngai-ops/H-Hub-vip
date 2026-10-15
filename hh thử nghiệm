@@ -820,4 +820,276 @@ local function step(dt)
     elseif u >= 0.50 and u < 0.545 then amp = 10
     elseif u >= 0.62 and u < 0.69 then amp = 8
     elseif u >= 0.69 and u < T_EXPLODE then amp = 8 + 24 * sm(0.69, T_EXPLODE, u)
-    elseif u >= T_EXPLODE and u
+    elseif u >= T_EXPLODE and u < 0.77 then amp = 30 * (1 - sm(T_EXPLODE, 0.77, u)) end
+    amp += burst
+    local shx, shy = 0, 0
+    if amp > 0 then
+        shx = (rng:NextNumber() - 0.5) * 2 * amp
+        shy = (rng:NextNumber() - 0.5) * 2 * amp
+    end
+    root.Position = UDim2.fromOffset(shx, shy)
+    vp.Position = UDim2.fromOffset(shx, shy)
+
+    ----------------------------------------------------
+    -- CAMERA 3D
+    ----------------------------------------------------
+    local cpos, ctarget = camAt(u)
+    cpos += V3(math.sin(t * 0.5) * 1.0, math.sin(t * 0.7) * 0.4, 0)
+    if amp > 0 then
+        cpos += V3((rng:NextNumber() - 0.5), (rng:NextNumber() - 0.5), 0) * amp * 0.03
+    end
+    cam.CFrame = CFrame.lookAt(cpos, ctarget)
+
+    if u < T_EXPLODE + 0.01 then
+        ----------------------------------------------------
+        -- GOJO
+        ----------------------------------------------------
+        local appear = sm(0.03, 0.12, u)
+        local raise = sm(0.12, 0.24, u)
+        local swing = sm(0.40, 0.50, u)
+        local thrust = sm(0.52, 0.56, u)
+        local upX = 0.1 + 1.25 * raise + 0.2 * swing
+        upX = upX + (1.57 - upX) * thrust
+        local upSp = 0.6 * raise * (1 - swing)
+        local recoil = 1.5 * (sm(0.54, 0.56, u) - sm(0.56, 0.62, u))
+        local gRoot = CFrame.lookAt(G_POS + V3(-recoil, -2 * (1 - appear), 0), G_POS + V3(-recoil, -2 * (1 - appear), 0) + gojoDir)
+        gojo.setTransparency(1 - appear)
+        gojo.pose(gRoot, {upX = upX, upSp = upSp, lowX = 0.1, lowSp = 0.1})
+
+        gojoAura.Position = G_POS + V3(-recoil, 6, 0)
+        local gaSize = 15 + 2 * math.sin(t * 6) + 6 * raise
+        gojoAura.Size = V3(gaSize, gaSize, gaSize)
+        gojoAura.Transparency = 1 - (0.1 + 0.15 * raise) * appear
+
+        ----------------------------------------------------
+        -- Quả XANH + ĐỎ -> va chạm -> TÍM
+        ----------------------------------------------------
+        local orbAppear = sm(0.16, 0.28, u)
+        local gone = 1 - sm(0.495, 0.505, u)
+        local osize = 0.5 + 4.0 * orbAppear + 1.0 * sm(0.28, 0.40, u)
+        local oint = orbAppear * gone
+        local spin = 2 + 6 * sm(0.30, 0.50, u)
+        local m = clamp01((u - 0.40) / 0.10)
+        local m2 = m * m
+        local bob = V3(0, math.sin(t * 3) * 0.25, 0)
+        blueOrb.update(HOLD_BLUE:Lerp(CP, m2) + bob, osize, oint, t, spin)
+        redOrb.update(HOLD_RED:Lerp(CP, m2) + bob, osize, oint, t, -spin)
+
+        local pu = clamp01((u - 0.50) / 0.04)
+        local pf = clamp01((u - 0.545) / 0.175)
+        local ppos = CP:Lerp(HIT, pf ^ 1.6)
+        local psize = 4 + 9 * ease(pu) + 3 * pf + 60 * (sm(0.72, 0.742, u) ^ 2)
+        local pint = sm(0.50, 0.515, u) * (1 - sm(0.742, 0.748, u))
+        purpleOrb.update(ppos + V3(rng:NextNumber() - 0.5, rng:NextNumber() - 0.5, 0) * (u < 0.545 and 0.4 or 0.1), psize, pint, t, 5)
+
+        ----------------------------------------------------
+        -- SUKUNA + NGÔI ĐỀN
+        ----------------------------------------------------
+        local sApp = sm(0.56, 0.62, u)
+        local sUp = 0.3 + 2.0 * sm(0.60, 0.66, u)
+        local sRoot = CFrame.lookAt(S_POS, S_POS + sukunaDir)
+        sukuna.setTransparency(1 - sApp)
+        sukuna.pose(sRoot, {upX = sUp, upSp = 0.2, lowX = 0.5, lowSp = 0.25})
+        sukunaAura.Position = S_POS + V3(0, 6, 0)
+        local saSize = 17 + 2 * math.sin(t * 7) + 5 * sm(0.62, 0.70, u)
+        sukunaAura.Size = V3(saSize, saSize, saSize)
+        sukunaAura.Transparency = 1 - (0.1 + 0.15 * sm(0.62, 0.70, u)) * sApp
+
+        local rise = sm(0.62, 0.69, u)
+        if u >= 0.58 then
+            local shPos = SH_POS + V3(0, -40 * (1 - rise), 0)
+            if rise < 1 then burst = math.max(burst, 5) end
+            shrine.pose(CFrame.lookAt(shPos, shPos + shrineDir), {upX = 0, upSp = 0, lowX = 0, lowSp = 0})
+        end
+
+        -- Lá chắn đỏ quanh ngôi đền (loé mạnh khi quả tím đập vào)
+        shield.Position = SH_POS + V3(0, 10, 0)
+        local shTr = 1
+        if rise > 0.8 then
+            shTr = 0.9 + 0.03 * math.sin(t * 8)
+            shTr = shTr - 0.55 * sm(0.70, 0.73, u)
+        end
+        shield.Transparency = shTr
+
+        -- Vệt chém 3D toả ra từ ngôi đền
+        if u >= 0.62 then
+            local rate = 8 + 10 * sm(0.62, 0.74, u)
+            if t - lastSlash3 > 1 / rate then
+                lastSlash3 = t
+                spawn3DSlash(t)
+            end
+        end
+        local center = SH_POS + V3(0, 12, 0)
+        for _, s in ipairs(slash3) do
+            if s.active then
+                local age = (t - s.born) / s.life
+                if age >= 1 then
+                    s.active = false
+                    s.p.Transparency = 1
+                else
+                    local curLen = math.max(s.len * ease(clamp01(age * 3)), 0.05)
+                    local c = center + s.d * (s.r0 + curLen / 2)
+                    s.p.Size = V3(s.th, s.th, curLen)
+                    s.p.CFrame = CFrame.lookAt(c, c + s.d)
+                    s.p.Transparency = age > 0.5 and ((age - 0.5) / 0.5) ^ 2 or 0
+                end
+            end
+        end
+    end
+
+    ----------------------------------------------------
+    -- Tên nhân vật + ảnh mờ phía sau
+    ----------------------------------------------------
+    local nameText, nameCol, nameVis
+    if u < 0.56 then
+        nameText, nameCol = "GOJO", BLUE
+        nameVis = sm(0.10, 0.16, u) * (1 - sm(0.46, 0.52, u))
+    else
+        nameText, nameCol = "SUKUNA", RED
+        nameVis = sm(0.62, 0.68, u) * (1 - sm(0.71, 0.74, u))
+    end
+    if nameText ~= lastName then
+        lastName = nameText
+        nameLbl.Text = nameText
+        nameLbl.TextColor3 = nameCol
+    end
+    nameLbl.TextTransparency = 1 - nameVis
+
+    if gojoImg then
+        local pa = sm(0.04, 0.12, u) * (1 - sm(0.46, 0.52, u))
+        gojoImg.ImageTransparency = 1 - 0.55 * pa * (1 - finalFade)
+    end
+    if sukunaImg then
+        local pa = sm(0.60, 0.66, u) * (1 - sm(0.70, 0.74, u))
+        sukunaImg.ImageTransparency = 1 - 0.55 * pa * (1 - finalFade)
+    end
+
+    -- Tint màu theo sự kiện
+    local aB = pulse(u, 0.06, 0.03, 0.5)
+    local aP = pulse(u, 0.50, 0.03, 0.7)
+    local aR = pulse(u, 0.60, 0.03, 0.5)
+    local aMax = math.max(aB, aP, aR)
+    if aMax == aP then tint.BackgroundColor3 = PURPLE
+    elseif aMax == aR then tint.BackgroundColor3 = RED
+    else tint.BackgroundColor3 = BLUE end
+    tint.BackgroundTransparency = 1 - aMax
+
+    ----------------------------------------------------
+    -- NỔ -> màn hình trắng xoá
+    ----------------------------------------------------
+    local fl
+    if u < T_EXPLODE - 0.002 then fl = 1
+    elseif u < T_EXPLODE + 0.002 then fl = 1 - (u - (T_EXPLODE - 0.002)) / 0.004
+    elseif u < T_EXPLODE + 0.03 then fl = (u - (T_EXPLODE + 0.002)) / 0.028
+    else fl = 1 end
+    flash.BackgroundTransparency = math.clamp(fl, 0, 1)
+
+    local whiteOn = u >= T_EXPLODE and u < T_OFF + 0.005
+    halfA.Visible = whiteOn
+    halfB.Visible = whiteOn
+    reveal.Visible = u >= T_EXPLODE and u < T_END + 0.03
+    local wTrans = 1 - sm(T_EXPLODE, T_EXPLODE + 0.006, u)
+    halfA.BackgroundTransparency = wTrans
+    halfB.BackgroundTransparency = wTrans
+
+    ----------------------------------------------------
+    -- Vết chém mảnh đỏ / đen xé toạc màn trắng
+    ----------------------------------------------------
+    for i, s in ipairs(tearSeq) do
+        if not tearDone[i] and u >= T_TEARSLASH + (i - 1) * 0.0075 then
+            tearDone[i] = true
+            spawnSlash(t, {
+                parent = slashLayer,
+                x1 = s.main and 0.5 or 0.35, x2 = s.main and 0.5 or 0.65,
+                y1 = s.main and 0.5 or 0.35, y2 = s.main and 0.5 or 0.65,
+                rot = s.rot, lenMul = 2.2, th = s.main and 6 or 4,
+                c1 = s.c1, c2 = s.c2,
+                life = math.max(T_OPEN2 * D - t, 0.8), drawT = 0.12, hold = 0.75,
+            })
+            burst = 14
+        end
+    end
+
+    -- Đường xé: 2 mảnh trắng tách ra theo đường chéo
+    local g = 260 * sm(T_TEAR, T_TEAR + 0.025, u) + 2740 * sm(T_OPEN2, T_OFF, u)
+    local wedge = 3 * sm(T_TEAR, T_TEAR + 0.025, u)
+    local off = L / 2 + g / 2
+    halfA.Position = UDim2.new(0.5, nx * off, 0.5, ny * off)
+    halfB.Position = UDim2.new(0.5, -nx * off, 0.5, -ny * off)
+    halfA.Rotation = TEAR_ANGLE + wedge
+    halfB.Rotation = TEAR_ANGLE - wedge
+    local edgeT = 1 - sm(T_TEAR, T_TEAR + 0.004, u)
+    edgeA.BackgroundTransparency = edgeT
+    edgeB.BackgroundTransparency = edgeT
+
+    -- Chữ GOJO VS SUKUNA hiện ở chỗ rách + ảnh lãnh địa
+    local ts = sm(T_TEAR + 0.005, T_TEAR + 0.025, u)
+    if title:IsA("TextLabel") then
+        title.TextTransparency = 1 - ts
+        title.TextStrokeTransparency = 1 - 0.8 * ts
+    else
+        title.ImageTransparency = 1 - ts
+    end
+    titleScale.Scale = 1.25 - 0.25 * sm(T_TEAR, T_OFF, u)
+    if domainScale then
+        domainScale.Scale = 1.2 - 0.2 * sm(T_TEAR, T_END, u)
+    end
+
+    -- Gojo bị chém liên tục bởi vết chém đỏ của Sukuna (nửa trái màn hình)
+    if u >= 0.83 and u < T_END - 0.005 and t - lastDomain > 1 / 9 then
+        lastDomain = t
+        domainCount += 1
+        local black = domainCount % 3 == 0
+        local life = rng:NextNumber(0.3, 0.5)
+        spawnSlash(t, {
+            parent = slashLayer, x1 = 0.03, x2 = 0.6, y1 = 0.1, y2 = 0.9,
+            rot = rng:NextNumber(-60, 60), lenMul = rng:NextNumber(0.3, 0.6), th = 7,
+            c1 = black and BLACK or RED, c2 = black and RED or WHITE,
+            life = life, drawT = life / 3, hold = 0,
+        })
+        burst = math.max(burst, 8)
+    end
+
+    -- Cập nhật vết chém 2D
+    for i = #slashes, 1, -1 do
+        local s = slashes[i]
+        local age = (t - s.born) / s.life
+        if age >= 1 then
+            s.f:Destroy()
+            table.remove(slashes, i)
+        else
+            local draw = ease(clamp01((t - s.born) / s.drawT))
+            local fadeK = 0
+            if age > s.hold then fadeK = (age - s.hold) / (1 - s.hold) end
+            s.f.Size = UDim2.fromOffset(s.len * draw, s.th * (1 - fadeK) + 1)
+            s.f.BackgroundTransparency = fadeK ^ 2
+        end
+    end
+
+    ----------------------------------------------------
+    -- Loading UI
+    ----------------------------------------------------
+    for _, s in ipairs(sides) do
+        s.arcGrad.Rotation = (t * 360) % 360 * s.dir
+        s.pct.Text = string.format("%d%%", math.floor(u * 100))
+        s.fill.Size = UDim2.fromScale(1, u)
+    end
+
+    if u >= 1 then finish() end
+end
+
+conn = RunService.RenderStepped:Connect(function(dt)
+    local ok, e = pcall(step, dt)
+    if not ok and not errShown then
+        errShown = true
+        warn("[Intro] LOI vong lap: " .. tostring(e))
+    end
+end)
+
+print("[Intro] khoi tao xong")
+end)
+
+if not __ok then
+    warn("[Intro] LOI: " .. tostring(__err))
+    task.spawn(RunMainScript) -- intro hỏng thì vẫn chạy script chính
+end
