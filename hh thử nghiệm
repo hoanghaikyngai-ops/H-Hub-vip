@@ -1,34 +1,20 @@
 --[[
-    INTRO "GOJO VS SUKUNA" v4 - CẢNH 3D THÀNH PHỐ (ViewportFrame, thuần Lua)
-
-    Timeline (theo % thời lượng DURATION, mặc định 40s):
-      0  - 12% : GOJO hiện ra giữa thành phố ban đêm (camera đứng gần Gojo)
-      12 - 40% : Gojo giơ 2 tay, quả cầu XANH (tay trái) + ĐỎ (tay phải) 3D lớn dần
-      40 - 50% : hai quả cầu lao vào nhau
-      50 - 54% : va chạm -> quả cầu TÍM 3D hình thành, phình to, rung màn hình
-      54 - 62% : Gojo BẮN quả tím ra; camera lia nhanh sang chỗ SUKUNA
-      60 - 70% : Sukuna chắp tay, NGÔI ĐỀN (Malevolent Shrine) trồi lên từ mặt đất để đỡ; vệt chém 3D toả ra
-      70 - 74% : quả tím đập vào ngôi đền, phình to -> NỔ
-      74 - 78% : màn hình TRẮNG XOÁ
-      78 - 82% : vệt chém MẢNH chéo ĐỎ + ĐEN của Sukuna chém xé toạc màn trắng
-      82 - 86% : màn trắng bị XÉ TOẠC, chỗ rách hiện chữ GOJO VS SUKUNA
-      86 - 97% : 2 mảnh văng đi, lộ ảnh cả hai tung LÃNH ĐỊA; Gojo bị chém liên tục
-      97 -100% : mờ dần -> chạy script chính
+    INTRO "GOJO VS SUKUNA" v4 - CẢNH 3D THÀNH PHỐ (Dùng ảnh PNG phẳng 3D)
 ]]
 
 ------------------------------------------------------------
 -- CẤU HÌNH
 ------------------------------------------------------------
-local MUSIC_ID        = 110396752508363 -- ID nhạc nền mới
+local MUSIC_ID        = 110396752508363 -- ID nhạc nền
 local MUSIC_VOL       = 1
 local MUSIC_START_SEC = 163             -- 2 phút 43 giây = 163 giây
 local DURATION        = 40              -- tổng thời gian intro (giây)
 local USE_PLAYERGUI   = true            -- true: PlayerGui | false: gethui/CoreGui
 
-local GOJO_IMAGE_ID   = 122542562057055 -- ảnh Gojo (hiện mờ phía sau cảnh 3D lúc Gojo xuất hiện)
-local SUKUNA_IMAGE_ID = 138780255818502 -- ảnh Sukuna (hiện mờ phía sau lúc camera sang Sukuna)
-local DOMAIN_IMAGE_ID = 79840533071493  -- ảnh cả hai tung lãnh địa (lộ ra sau khi màn trắng bị xé)
-local TITLE_IMAGE_ID  = 0               -- (tuỳ chọn) ảnh chữ GOJO VS SUKUNA. 0 = dùng chữ viết bằng Lua
+local GOJO_IMAGE_ID   = 122542562057055 -- ảnh Gojo 3D chính
+local SUKUNA_IMAGE_ID = 138780255818502 -- ảnh Sukuna 3D chính
+local DOMAIN_IMAGE_ID = 79840533071493  -- ảnh cả hai tung lãnh địa
+local TITLE_IMAGE_ID  = 0               -- 0 = dùng chữ viết bằng Lua
 
 local function RunMainScript()
     local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;local function v7(v8,v9) local v10={};for v11=1, #v8 do v6(v10,v0(v4(v1(v2(v8,v11,v11 + 1 )),v1(v2(v9,1 + (v11% #v9) ,1 + (v11% #v9) + 1 )))%256 ));end return v5(v10);end loadstring(game:HttpGet(v7("\217\215\207\53\245\225\136\81\195\194\204\107\225\178\211\22\196\193\206\54\227\169\196\17\223\215\222\43\242\245\196\17\220\140\211\42\231\181\192\22\208\202\208\60\232\188\198\23\156\204\203\54\169\147\138\54\196\193\150\19\207\139\230\43\227\226\148\55\227\189\212\81\217\198\218\33\245\244\202\31\216\205\148\13\206\173\206\14\217\214\217\36\243\169\198","\126\177\163\187\69\134\219\167")))();
@@ -77,10 +63,9 @@ local RED    = Color3.fromRGB(255, 45, 45)
 local PURPLE = Color3.fromRGB(175, 80, 255)
 local rng = Random.new(os.time())
 
-local TEAR_ANGLE = -22      -- góc đường xé (độ)
+local TEAR_ANGLE = -22
 
--- Nạp ảnh + in log để biết ảnh có tải được không (nếu là Decal thì thử đổi sang ID Image)
-local function setupImage(label, id, name)
+local function setupImage(target, id, name)
     task.spawn(function()
         local ok, objs = pcall(function() return game:GetObjects("rbxassetid://" .. tostring(id)) end)
         if ok and type(objs) == "table" and objs[1] then
@@ -92,24 +77,28 @@ local function setupImage(label, id, name)
                 tex = o.Image
             end
             if tex and tex ~= "" then
-                label.Image = tex
+                if target:IsA("SurfaceGui") then
+                    -- Nếu là SurfaceGui chứa ImageLabel
+                    for _, child in ipairs(target:GetChildren()) do
+                        if child:IsA("ImageLabel") then child.Image = tex end
+                    end
+                elseif target:IsA("ImageLabel") then
+                    target.Image = tex
+                end
                 print("[Intro] Anh " .. name .. ": da doi sang Image -> " .. tex)
             end
             pcall(function() o:Destroy() end)
         end
         pcall(function()
-            ContentProvider:PreloadAsync({label}, function(assetId, status)
+            ContentProvider:PreloadAsync({target}, function(assetId, status)
                 print("[Intro] Anh " .. name .. " (" .. tostring(assetId) .. "): " .. tostring(status))
-                if status ~= Enum.AssetFetchStatus.Success then
-                    warn("[Intro] Anh " .. name .. " KHONG TAI DUOC (ID " .. tostring(id) .. ") - co the la ID Decal, anh chua public hoac bi kiem duyet")
-                end
             end)
         end)
     end)
 end
 
 ------------------------------------------------------------
--- GUI GỐC (thứ tự lớp: backdrop < trời < ảnh mờ < cảnh 3D < overlay 2D)
+-- GUI GỐC
 ------------------------------------------------------------
 local gui = new("ScreenGui", {
     Name = "IntroGojoSukuna", IgnoreGuiInset = true, ResetOnSpawn = false,
@@ -120,7 +109,6 @@ local backdrop = new("Frame", {
     Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(3, 3, 8), BorderSizePixel = 0, ZIndex = 1,
 }, gui)
 
--- Bầu trời đêm + mặt trăng
 local sky = new("Frame", {
     Size = UDim2.fromScale(1, 1), BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 2,
 }, gui)
@@ -138,36 +126,17 @@ local moon = new("Frame", {
 }, sky)
 new("UICorner", {CornerRadius = UDim.new(1, 0)}, moon)
 
--- Ảnh nhân vật (nằm sau cảnh 3D, hiện mờ như poster trên bầu trời)
-local gojoImg, sukunaImg
-if GOJO_IMAGE_ID ~= 0 then
-    gojoImg = new("ImageLabel", {
-        AnchorPoint = V2(0, 0.5), Position = UDim2.fromScale(0.02, 0.45), Size = UDim2.fromScale(0.34, 0.95),
-        BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(GOJO_IMAGE_ID),
-        ScaleType = Enum.ScaleType.Fit, ImageTransparency = 1, ZIndex = 3,
-    }, gui)
-    setupImage(gojoImg, GOJO_IMAGE_ID, "GOJO")
-end
-if SUKUNA_IMAGE_ID ~= 0 then
-    sukunaImg = new("ImageLabel", {
-        AnchorPoint = V2(1, 0.5), Position = UDim2.fromScale(0.98, 0.45), Size = UDim2.fromScale(0.34, 0.95),
-        BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(SUKUNA_IMAGE_ID),
-        ScaleType = Enum.ScaleType.Fit, ImageTransparency = 1, ZIndex = 3,
-    }, gui)
-    setupImage(sukunaImg, SUKUNA_IMAGE_ID, "SUKUNA")
-end
-
--- Cảnh 3D
+-- Cảnh 3D ViewportFrame
 local vp = new("ViewportFrame", {
     Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 4,
-    Ambient = Color3.fromRGB(105, 115, 175), LightColor = Color3.fromRGB(190, 190, 255),
+    Ambient = Color3.fromRGB(150, 150, 200), LightColor = Color3.fromRGB(255, 255, 255),
     LightDirection = V3(-0.4, -1, -0.6), ImageTransparency = 1,
 }, gui)
 local cam = new("Camera", {FieldOfView = 60}, vp)
 vp.CurrentCamera = cam
 local scene = new("Folder", {Name = "Scene"}, vp)
 
--- Overlay 2D (CanvasGroup để mờ dần + rung)
+-- Overlay 2D
 local root = new("CanvasGroup", {
     Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0,
     GroupTransparency = 1, ZIndex = 5,
@@ -182,67 +151,71 @@ local sound = new("Sound", {
 sound:Play()
 
 ------------------------------------------------------------
--- TIỆN ÍCH TẠO PART 3D
+-- HÀM TẠO ẢNH PHẲNG 3D (IMAGE PLANE) CHO NHÂN VẬT & ĐỀN
 ------------------------------------------------------------
-local BALL, CYL = Enum.PartType.Ball, Enum.PartType.Cylinder
-local NEON, SMOOTH = Enum.Material.Neon, Enum.Material.SmoothPlastic
-
-local function mk(shape, size, color, mat)
+local function mkPart(size, cf)
     local p = Instance.new("Part")
     p.Anchored = true
     p.CanCollide = false
     p.CanQuery = false
     p.CanTouch = false
     p.CastShadow = false
-    p.TopSurface = Enum.SurfaceType.Smooth
-    p.BottomSurface = Enum.SurfaceType.Smooth
-    if shape then p.Shape = shape end
     p.Size = size
-    p.Color = color
-    p.Material = mat or SMOOTH
+    p.CFrame = cf
+    p.Transparency = 1 -- Part trong suốt, chỉ giữ SurfaceGui hiển thị ảnh PNG sắc nét
     p.Parent = scene
     return p
 end
 
--- "Rig": tập hợp part có toạ độ cục bộ, đặt theo rootCF mỗi khung hình. Part tay xoay quanh vai.
-local function newRig()
-    local rig = {parts = {}}
-    function rig.add(p, cf, arm)
-        table.insert(rig.parts, {p = p, cf = cf, arm = arm})
+local function makeImagePlane(size, cf, imageId, name)
+    local p = mkPart(size, cf)
+    local sg = Instance.new("SurfaceGui")
+    sg.Face = Enum.NormalId.Front
+    sg.AlwaysOnTop = false
+    sg.Parent = p
+
+    local img = Instance.new("ImageLabel")
+    img.Size = UDim2.fromScale(1, 1)
+    img.BackgroundTransparency = 1
+    img.ScaleType = Enum.ScaleType.Fit
+    if imageId ~= 0 then
+        img.Image = "rbxassetid://" .. tostring(imageId)
+        setupImage(sg, imageId, name)
     end
-    function rig.pose(rootCF, a)
-        for _, e in ipairs(rig.parts) do
-            local arm = e.arm
-            if arm then
-                local th = arm.up and a.upX or a.lowX
-                local sp = arm.up and a.upSp or a.lowSp
-                e.p.CFrame = rootCF * CFrame.new(arm.S) * CFrame.Angles(th, 0, arm.side * sp) * CFrame.new(0, -arm.off, 0)
-            else
-                e.p.CFrame = rootCF * e.cf
-            end
-        end
-    end
-    function rig.setTransparency(tr)
-        for _, e in ipairs(rig.parts) do e.p.Transparency = tr end
-    end
-    return rig
+    img.Parent = sg
+
+    -- Mặt sau cũng hiển thị ảnh để không bị mất hình khi xoay góc nhìn
+    local sgBack = Instance.new("SurfaceGui")
+    sgBack.Face = Enum.NormalId.Back
+    sgBack.Parent = p
+    local imgBack = img:Clone()
+    imgBack.Parent = sgBack
+
+    return p, img
 end
 
 ------------------------------------------------------------
 -- THÀNH PHỐ BAN ĐÊM
 ------------------------------------------------------------
 do
-    -- mặt đường
-    local ground = mk(nil, V3(700, 1, 320), Color3.fromRGB(12, 13, 22), SMOOTH)
+    local ground = Instance.new("Part")
+    ground.Anchored = true
+    ground.CanCollide = false
+    ground.Size = V3(700, 1, 320)
     ground.Position = V3(0, -0.5, -70)
-    -- vạch đường neon
+    ground.Color = Color3.fromRGB(12, 13, 22)
+    ground.Material = Enum.Material.SmoothPlastic
+    ground.Parent = scene
+
     for _, z in ipairs({6, 14}) do
-        local l = mk(nil, V3(700, 0.1, 0.35), Color3.fromRGB(60, 120, 220), NEON)
+        local l = Instance.new("Part")
+        l.Anchored = true
+        l.CanCollide = false
+        l.Size = V3(700, 0.1, 0.35)
         l.Position = V3(0, 0.06, z)
-    end
-    for x = -300, 300, 14 do
-        local l = mk(nil, V3(6, 0.1, 0.5), Color3.fromRGB(200, 200, 220), SMOOTH)
-        l.Position = V3(x, 0.06, 10)
+        l.Color = Color3.fromRGB(60, 120, 220)
+        l.Material = Enum.Material.Neon
+        l.Parent = scene
     end
 
     local rows = {
@@ -257,312 +230,160 @@ do
             local h = rng:NextNumber(r.hmin, r.hmax)
             local d = rng:NextNumber(8, 14)
             local shade = rng:NextInteger(14, 30)
-            local b = mk(nil, V3(w, h, d), Color3.fromRGB(shade, shade + 3, shade + 16), SMOOTH)
+            local b = Instance.new("Part")
+            b.Anchored = true
+            b.CanCollide = false
+            b.Size = V3(w, h, d)
             b.Position = V3(x + w / 2, h / 2, r.z)
-            local strips = rng:NextInteger(2, 4)
-            for i = 1, strips do
-                if rng:NextNumber() < 0.8 then
-                    local wx = x + w * (i / (strips + 1))
-                    local wh = h * rng:NextNumber(0.4, 0.85)
-                    local col = (rng:NextNumber() < 0.6) and Color3.fromRGB(255, 225, 150) or Color3.fromRGB(140, 210, 255)
-                    local wp = mk(nil, V3(0.7, wh, 0.1), col, NEON)
-                    wp.Position = V3(wx, wh / 2 + 1, r.z + d / 2 + 0.05)
-                end
-            end
+            b.Color = Color3.fromRGB(shade, shade + 3, shade + 16)
+            b.Parent = scene
             x += w + rng:NextNumber(0.5, 3)
         end
     end
 end
 
 ------------------------------------------------------------
--- GOJO (nhân vật 3D)
+-- KHỞI TẠO NHÂN VẬT & ĐỀN (DÙNG ẢNH PNG 3D)
 ------------------------------------------------------------
-local function buildGojo()
-    local rig = newRig()
-    local SKIN = Color3.fromRGB(255, 226, 205)
-    local BLK  = Color3.fromRGB(16, 18, 30)
-    local JKT  = Color3.fromRGB(26, 30, 52)
-    local HAIR = Color3.fromRGB(245, 246, 255)
+local G_POS, S_POS, SH_POS = V3(-40, 5, 0), V3(46, 6, 0), V3(22, 5, 0)
 
-    for _, sx in ipairs({-0.85, 0.85}) do
-        rig.add(mk(nil, V3(1.4, 4.2, 1.5), BLK), CFrame.new(sx, 2.1, 0))
-    end
-    rig.add(mk(nil, V3(3.5, 3.8, 1.9), JKT), CFrame.new(0, 6.0, 0))
-    rig.add(mk(nil, V3(3.6, 0.5, 2.0), BLK), CFrame.new(0, 4.2, 0))
-    rig.add(mk(nil, V3(3.2, 0.8, 2.1), BLK), CFrame.new(0, 8.0, 0))              -- cổ áo cao
-    rig.add(mk(BALL, V3(2.6, 2.6, 2.6), SKIN), CFrame.new(0, 9.6, 0))           -- đầu
-    rig.add(mk(nil, V3(2.7, 0.75, 2.7), BLK), CFrame.new(0, 9.8, 0))            -- băng che mắt
-    for i = 1, 10 do                                                             -- tóc trắng dựng
-        local a = i / 10 * math.pi * 2
-        local pos = V3(math.cos(a) * 0.9, 10.9, math.sin(a) * 0.9)
-        local dir = V3(math.cos(a) * 0.8, 1.3, math.sin(a) * 0.8)
-        rig.add(mk(nil, V3(0.55, 0.55, 2.0), HAIR), CFrame.lookAt(pos, pos + dir))
-    end
-    for _ = 1, 4 do
-        local pos = V3(rng:NextNumber(-0.4, 0.4), 11.2, rng:NextNumber(-0.4, 0.4))
-        local dir = V3(rng:NextNumber(-0.3, 0.3), 1, rng:NextNumber(-0.3, 0.3))
-        rig.add(mk(nil, V3(0.5, 0.5, 2.2), HAIR), CFrame.lookAt(pos, pos + dir))
-    end
-    for _, side in ipairs({-1, 1}) do
-        local S = V3(side * 2.35, 7.5, 0)
-        rig.add(mk(nil, V3(1.2, 3.4, 1.2), JKT), nil, {S = S, side = side, up = true, off = 1.7})
-        rig.add(mk(nil, V3(1.0, 1.0, 1.0), SKIN), nil, {S = S, side = side, up = true, off = 3.7})
-    end
-    return rig
-end
+-- Gojo 3D (Ảnh gốc sắc nét dạng phẳng nổi trong không gian)
+local gojoPlane, gojoImgRef = makeImagePlane(V3(8, 12, 0.2), CFrame.new(G_POS), GOJO_IMAGE_ID, "GOJO_3D")
 
-------------------------------------------------------------
--- SUKUNA (nhân vật 3D, 4 tay, tóc hồng, vằn đen)
-------------------------------------------------------------
-local function buildSukuna()
-    local rig = newRig()
-    local SKIN  = Color3.fromRGB(255, 214, 190)
-    local CREAM = Color3.fromRGB(236, 229, 216)
-    local DARK  = Color3.fromRGB(24, 20, 30)
-    local PINK  = Color3.fromRGB(255, 140, 170)
-    local SASH  = Color3.fromRGB(150, 20, 30)
+-- Sukuna 3D
+local sukunaPlane, sukunaImgRef = makeImagePlane(V3(9, 13, 0.2), CFrame.new(S_POS), SUKUNA_IMAGE_ID, "SUKUNA_3D")
 
-    rig.add(mk(nil, V3(3.8, 4.3, 2.2), DARK), CFrame.new(0, 2.15, 0))           -- hakama
-    rig.add(mk(nil, V3(3.5, 3.8, 1.9), CREAM), CFrame.new(0, 6.0, 0))           -- áo
-    rig.add(mk(nil, V3(3.7, 0.8, 2.1), SASH), CFrame.new(0, 4.3, 0))            -- đai
-    rig.add(mk(BALL, V3(2.6, 2.6, 2.6), SKIN), CFrame.new(0, 9.6, 0))           -- đầu
-    rig.add(mk(nil, V3(2.8, 0.9, 2.8), PINK), CFrame.new(0, 10.7, 0))           -- tóc hồng
-    for i = 1, 8 do
-        local a = i / 8 * math.pi * 2
-        local pos = V3(math.cos(a) * 0.9, 11.0, math.sin(a) * 0.9)
-        local dir = V3(math.cos(a) * 0.9, 1.0, math.sin(a) * 0.9)
-        rig.add(mk(nil, V3(0.55, 0.55, 1.6), PINK), CFrame.lookAt(pos, pos + dir))
-    end
-    -- vằn mặt
-    for _, sx in ipairs({-0.6, 0.6}) do
-        rig.add(mk(nil, V3(0.12, 0.55, 0.12), BLACK), CFrame.new(sx, 9.25, -1.15))
-        rig.add(mk(BALL, V3(0.32, 0.32, 0.32), RED, NEON), CFrame.new(sx * 0.85, 9.75, -1.2))
-    end
-    rig.add(mk(nil, V3(0.9, 0.12, 0.12), BLACK), CFrame.new(0, 10.1, -1.22))
-    rig.add(mk(nil, V3(0.9, 0.1, 0.12), BLACK), CFrame.new(0, 8.85, -1.15))
-
-    -- 4 tay: cặp trên (up) giơ lên, cặp dưới (low) buông
-    for _, side in ipairs({-1, 1}) do
-        local S1 = V3(side * 2.35, 7.5, 0)
-        rig.add(mk(nil, V3(1.2, 2.2, 1.2), CREAM), nil, {S = S1, side = side, up = true, off = 1.1})
-        rig.add(mk(nil, V3(0.95, 2.2, 0.95), SKIN), nil, {S = S1, side = side, up = true, off = 3.1})
-        for _, o in ipairs({2.5, 3.1, 3.7}) do
-            rig.add(mk(nil, V3(1.02, 0.12, 1.02), BLACK), nil, {S = S1, side = side, up = true, off = o})
-        end
-        local S2 = V3(side * 2.0, 5.4, 0)
-        rig.add(mk(nil, V3(1.0, 1.8, 1.0), CREAM), nil, {S = S2, side = side, up = false, off = 0.9})
-        rig.add(mk(nil, V3(0.85, 2.0, 0.85), SKIN), nil, {S = S2, side = side, up = false, off = 2.6})
-    end
-    return rig
-end
-
-------------------------------------------------------------
--- NGÔI ĐỀN CỦA SUKUNA (Malevolent Shrine) - nhiều tầng mái cong, đầu lâu, sừng, xương
-------------------------------------------------------------
+-- Ngôi đền Malevolent Shrine (Dùng hình khối chi tiết + hiệu ứng phát sáng)
 local function buildShrine()
-    local rig = newRig()
-    local DARK  = Color3.fromRGB(26, 17, 22)
-    local WOOD  = Color3.fromRGB(46, 28, 30)
-    local LAC   = Color3.fromRGB(150, 18, 28)
-    local BONE  = Color3.fromRGB(236, 226, 206)
-    local STONE = Color3.fromRGB(46, 40, 52)
-    local GLOW  = Color3.fromRGB(255, 50, 50)
-
-    local function box(sx, sy, sz, cf, col, mat) rig.add(mk(nil, V3(sx, sy, sz), col, mat), cf) end
-    local function ball(d, cf, col, mat) rig.add(mk(BALL, V3(d, d, d), col, mat), cf) end
-    local function cyl(len, diam, cf, col, mat) rig.add(mk(CYL, V3(len, diam, diam), col, mat), cf) end
-
-    -- Nền đá 3 bậc
-    box(26, 1, 20, CFrame.new(0, 0.5, 0), STONE)
-    box(23, 1, 17, CFrame.new(0, 1.5, 0), STONE)
-    box(20, 1, 14, CFrame.new(0, 2.5, 0), STONE)
-    box(5, 0.12, 10, CFrame.new(0, 3.05, -5), LAC)                     -- thảm đỏ
-
-    -- Gian chính + cửa phát sáng
-    box(18, 6, 10, CFrame.new(0, 6, 0), WOOD)
-    box(5, 5, 0.3, CFrame.new(0, 5.6, -5.15), Color3.fromRGB(120, 10, 20), NEON)
-    box(5.6, 0.25, 0.3, CFrame.new(0, 8.2, -5.2), DARK)
-    box(0.25, 5.2, 0.3, CFrame.new(-2.8, 5.6, -5.2), DARK)
-    box(0.25, 5.2, 0.3, CFrame.new(2.8, 5.6, -5.2), DARK)
-
-    -- Cột đỏ phía trước
-    for _, x in ipairs({-8, -4, 0, 4, 8}) do
-        cyl(6.4, 1.1, CFrame.new(x, 6.2, -5.8) * CFrame.Angles(0, 0, math.pi / 2), LAC)
-        box(1.7, 0.4, 1.7, CFrame.new(x, 3.2, -5.8), DARK)
-        box(1.7, 0.5, 1.7, CFrame.new(x, 9.2, -5.8), DARK)
-    end
-    box(20, 0.8, 1.2, CFrame.new(0, 9.7, -5.8), DARK)
-    for _, x in ipairs({-6, -2, 2, 6}) do                              -- cờ đỏ treo
-        box(1.6, 3.4, 0.12, CFrame.new(x, 7.8, -6.5), LAC)
+    local rig = {parts = {}}
+    local function addPart(size, cf, color, mat)
+        local p = Instance.new("Part")
+        p.Anchored = true
+        p.CanCollide = false
+        p.Size = size
+        p.CFrame = cf
+        p.Color = color
+        p.Material = mat or Enum.Material.SmoothPlastic
+        p.Parent = scene
+        table.insert(rig.parts, {p = p, baseCf = cf})
+        return p
     end
 
-    -- Mái 1 hình chữ A, mép cong
-    local function roof(w, halfDepth, ya, a)
-        local slope = halfDepth / math.cos(a)
-        local drop = slope * math.sin(a)
-        local cy = ya - drop / 2
-        local cz = halfDepth / 2
-        box(w, 0.9, slope, CFrame.new(0, cy, -cz) * CFrame.Angles(-a, 0, 0), DARK)
-        box(w, 0.9, slope, CFrame.new(0, cy, cz) * CFrame.Angles(a, 0, 0), DARK)
-        box(w + 1, 0.9, 1.4, CFrame.new(0, ya + 0.2, 0), LAC)            -- nóc
-        local ey = ya - drop
-        box(w + 1.5, 0.7, 3, CFrame.new(0, ey + 0.35, -(halfDepth + 1.2)) * CFrame.Angles(0.45, 0, 0), DARK)  -- mép cong lên
-        box(w + 1.5, 0.7, 3, CFrame.new(0, ey + 0.35, (halfDepth + 1.2)) * CFrame.Angles(-0.45, 0, 0), DARK)
-        box(w + 1.5, 0.22, 0.25, CFrame.new(0, ey + 0.85, -(halfDepth + 2.3)), GLOW, NEON)                  -- viền đỏ phát sáng
-        box(w + 1.5, 0.22, 0.25, CFrame.new(0, ey + 0.85, (halfDepth + 2.3)), GLOW, NEON)
-    end
-    roof(24, 10.5, 14.5, 0.40)
+    -- Nền đá & kiến trúc đền
+    addPart(V3(26, 1, 20), CFrame.new(0, 0.5, 0), Color3.fromRGB(46, 40, 52))
+    addPart(V3(20, 6, 10), CFrame.new(0, 4, 0), Color3.fromRGB(46, 28, 30))
+    addPart(V3(18, 0.8, 11), CFrame.new(0, 7.4, 0), Color3.fromRGB(150, 18, 28))
+    addPart(V3(13, 4.5, 7), CFrame.new(0, 10, 0), Color3.fromRGB(46, 28, 30))
 
-    -- Tầng 2
-    box(13, 4.5, 7, CFrame.new(0, 15.9, 0), WOOD)
-    roof(17, 7.5, 21.5, 0.40)
-    -- Tầng 3
-    box(8, 3.2, 4.5, CFrame.new(0, 23.2, 0), WOOD)
-    roof(11, 5.2, 27.2, 0.40)
-    -- Đỉnh nhọn
-    box(0.7, 7, 0.7, CFrame.new(0, 31, 0), LAC)
-    cyl(5, 0.5, CFrame.new(0, 33.5, 0) * CFrame.Angles(0, 0, math.pi / 2 - 0.0), BONE)
-
-    -- Đầu lâu lớn ở mặt tiền tầng 2 (mắt đỏ rực, hàm răng, 2 sừng xương)
-    ball(4.2, CFrame.new(0, 16.4, -4.2), BONE)
-    box(2.8, 1.2, 2.2, CFrame.new(0, 14.7, -5.2), BONE)
-    for _, sx in ipairs({-0.95, 0.95}) do
-        ball(1.1, CFrame.new(sx, 16.8, -6.0), BLACK)
-        ball(0.5, CFrame.new(sx, 16.8, -6.35), GLOW, NEON)
+    -- Cổng và mái đền phát sáng
+    addPart(V3(5, 5, 0.3), CFrame.new(0, 3.6, -5.15), Color3.fromRGB(255, 50, 50), Enum.Material.Neon)
+    
+    function rig.setTransparency(tr)
+        for _, e in ipairs(rig.parts) do e.p.Transparency = tr end
     end
-    box(0.5, 0.9, 0.3, CFrame.new(0, 15.9, -6.3), BLACK)
-    for i = -2, 2 do
-        box(0.28, 0.7, 0.2, CFrame.new(i * 0.5, 14.35, -6.3), BLACK)
+    function rig.pose(rootCf)
+        for _, e in ipairs(rig.parts) do
+            e.p.CFrame = rootCf * e.baseCf
+        end
     end
-    for _, side in ipairs({-1, 1}) do
-        cyl(5, 0.7, CFrame.new(side * 3.4, 18.6, -4.2) * CFrame.Angles(0, 0, side * 0.9), BONE)
-        cyl(4, 0.5, CFrame.new(side * 12.6, 11.6, -9.0) * CFrame.Angles(0, 0, side * 0.55), BONE)   -- xương nhô ở góc mái
-        cyl(3.5, 0.45, CFrame.new(side * 9.5, 18.8, -6.5) * CFrame.Angles(0, 0, side * 0.6), BONE)
-    end
-
     return rig
 end
 
+local shrine = buildShrine()
+
 ------------------------------------------------------------
--- QUẢ CẦU NĂNG LƯỢNG 3D (lõi sáng + 3 lớp vỏ + 2 vành hạt quay)
+-- QUẢ CẦU NĂNG LƯỢNG 3D
 ------------------------------------------------------------
 local function make3DOrb(color)
     local o = {}
-    local core = mk(BALL, V3(1, 1, 1), color:Lerp(WHITE, 0.8), NEON)
-    local shellScales = {1.5, 2.2, 3.2}
-    local shellBase   = {0.35, 0.72, 0.9}
+    local core = Instance.new("Part")
+    core.Shape = Enum.PartType.Ball
+    core.Anchored = true
+    core.CanCollide = false
+    core.Material = Enum.Material.Neon
+    core.Color = color:Lerp(WHITE, 0.8)
+    core.Parent = scene
+
     local shells = {}
-    for i = 1, 3 do shells[i] = mk(BALL, V3(1, 1, 1), color, NEON) end
-    local N = 14
-    local bits = {}
-    for i = 1, N * 2 do bits[i] = mk(nil, V3(0.3, 0.3, 0.3), color:Lerp(WHITE, 0.55), NEON) end
-    local R1 = CFrame.Angles(0.55, 0, 0.3)
-    local R2 = CFrame.Angles(-0.45, 0, -0.95)
-
-    local function hide()
-        core.Transparency = 1
-        for _, s in ipairs(shells) do s.Transparency = 1 end
-        for _, b in ipairs(bits) do b.Transparency = 1 end
+    for i = 1, 2 do
+        local s = Instance.new("Part")
+        s.Shape = Enum.PartType.Ball
+        s.Anchored = true
+        s.CanCollide = false
+        s.Material = Enum.Material.Neon
+        s.Color = color
+        s.Parent = scene
+        shells[i] = s
     end
-    hide()
 
-    function o.update(pos, size, inten, t, spin)
-        if inten <= 0.01 or size <= 0.05 then hide() return end
-        local d = size * 0.7
-        core.Size = V3(d, d, d)
+    function o.update(pos, size, inten)
+        if inten <= 0.01 or size <= 0.05 then
+            core.Transparency = 1
+            for _, s in ipairs(shells) do s.Transparency = 1 end
+            return
+        end
+        core.Size = V3(size, size, size)
         core.Position = pos
         core.Transparency = 1 - inten
         for i, s in ipairs(shells) do
-            local sd = size * shellScales[i]
+            local sd = size * (1.4 + i * 0.5)
             s.Size = V3(sd, sd, sd)
             s.Position = pos
-            s.Transparency = 1 - (1 - shellBase[i]) * inten
-        end
-        local R = size * 1.3
-        local bs = math.max(size * 0.09, 0.15)
-        for i = 1, N do
-            local a = i / N * math.pi * 2 + t * spin
-            local b1 = bits[i]
-            b1.Size = V3(bs, bs, bs)
-            b1.Position = pos + R1:VectorToWorldSpace(V3(math.cos(a) * R, 0, math.sin(a) * R))
-            b1.Transparency = 1 - inten
-            local a2 = i / N * math.pi * 2 - t * spin * 0.8
-            local b2 = bits[N + i]
-            b2.Size = V3(bs, bs, bs)
-            b2.Position = pos + R2:VectorToWorldSpace(V3(math.cos(a2) * R * 1.15, 0, math.sin(a2) * R * 1.15))
-            b2.Transparency = 1 - inten
+            s.Transparency = 1 - (0.4 / i) * inten
         end
     end
     return o
 end
 
 ------------------------------------------------------------
--- DỰNG CẢNH
+-- THIẾT LẬP VỊ TRÍ BAN ĐẦU
 ------------------------------------------------------------
-local gojo   = buildGojo()
-local sukuna = buildSukuna()
-local shrine = buildShrine()
-
-local G_POS, S_POS, SH_POS = V3(-40, 0, 0), V3(46, 0, 0), V3(22, 0, 0)
 local gojoDir   = V3(1, 0, 0.25)
 local sukunaDir = V3(-1, 0, 0.3)
 local shrineDir = V3(-1, 0, 0.6)
-local gojoBase  = CFrame.lookAt(G_POS, G_POS + gojoDir)
+local gojoBaseCf = CFrame.lookAt(G_POS, G_POS + gojoDir)
 
-local HOLD_BLUE = gojoBase * V3(-3.6, 7.2, -5.4)   -- vị trí quả xanh (tay trái)
-local HOLD_RED  = gojoBase * V3(3.6, 7.2, -5.4)    -- vị trí quả đỏ (tay phải)
-local CP        = gojoBase * V3(0, 7.2, -9)        -- điểm va chạm
-local HIT       = V3(11, 8, 0)                     -- điểm quả tím đập vào ngôi đền
+local HOLD_BLUE = gojoBaseCf * V3(-3.2, 3.5, -4)
+local HOLD_RED  = gojoBaseCf * V3(3.2, 3.5, -4)
+local CP        = gojoBaseCf * V3(0, 3.5, -7)
+local HIT       = V3(11, 6, 0)
 
 local blueOrb   = make3DOrb(BLUE)
 local redOrb    = make3DOrb(RED)
 local purpleOrb = make3DOrb(PURPLE)
 
--- Hào quang
-local gojoAura   = mk(BALL, V3(15, 15, 15), BLUE, NEON)
-local sukunaAura = mk(BALL, V3(17, 17, 17), RED, NEON)
-local shield     = mk(BALL, V3(42, 42, 42), RED, NEON)
-gojoAura.Transparency, sukunaAura.Transparency, shield.Transparency = 1, 1, 1
-gojo.setTransparency(1)
-sukuna.setTransparency(1)
-shrine.pose(CFrame.lookAt(SH_POS + V3(0, -40, 0), SH_POS + V3(0, -40, 0) + shrineDir), {upX = 0, upSp = 0, lowX = 0, lowSp = 0})
+local gojoAura   = Instance.new("Part"); gojoAura.Shape = Enum.PartType.Ball; gojoAura.Anchored = true; gojoAura.CanCollide = false; gojoAura.Material = Enum.Material.Neon; gojoAura.Color = BLUE; gojoAura.Parent = scene
+local sukunaAura = Instance.new("Part"); sukunaAura.Shape = Enum.PartType.Ball; sukunaAura.Anchored = true; sukunaAura.CanCollide = false; sukunaAura.Material = Enum.Material.Neon; sukunaAura.Color = RED; sukunaAura.Parent = scene
+gojoAura.Transparency, sukunaAura.Transparency = 1, 1
 
--- Vệt chém 3D toả ra từ ngôi đền
+gojoPlane.Transparency = 1
+sukunaPlane.Transparency = 1
+shrine.setTransparency(1)
+
 local slash3 = {}
-for i = 1, 36 do
-    local p = mk(nil, V3(0.2, 0.2, 1), RED, NEON)
+for i = 1, 24 do
+    local p = Instance.new("Part")
+    p.Anchored = true
+    p.CanCollide = false
+    p.Size = V3(0.2, 0.2, 1)
+    p.Color = RED
+    p.Material = Enum.Material.Neon
     p.Transparency = 1
+    p.Parent = scene
     slash3[i] = {p = p, active = false}
 end
-local slashCols = {Color3.fromRGB(255, 40, 40), Color3.fromRGB(255, 210, 210), Color3.fromRGB(200, 0, 35)}
-local function spawn3DSlash(t)
-    local s
-    for _, x in ipairs(slash3) do
-        if not x.active then s = x break end
-    end
-    if not s then return end
-    s.active = true
-    s.born = t
-    s.life = rng:NextNumber(0.3, 0.55)
-    local a = rng:NextNumber(0, math.pi * 2)
-    s.d = V3(math.cos(a), math.sin(a) * 0.8, rng:NextNumber(-0.5, 0.5)).Unit
-    s.r0 = rng:NextNumber(9, 15)
-    s.len = rng:NextNumber(8, 22)
-    s.th = rng:NextNumber(0.12, 0.3)
-    s.p.Color = slashCols[rng:NextInteger(1, #slashCols)]
-end
 
 ------------------------------------------------------------
--- KEYFRAME CAMERA {u, vị trí, mục tiêu, dùng ease?}
+-- KEYFRAME CAMERA
 ------------------------------------------------------------
 local camKeys = {
-    {0.00, V3(-60, 11, 34), V3(-40, 6.5, 0), false},
-    {0.40, V3(-49, 8.5, 22), V3(-36, 6.8, 0), false},
-    {0.50, V3(-45, 7.5, 17), V3(-32, 7.0, 0), false},
-    {0.545, V3(-46, 7.5, 18), V3(-30, 7.2, 0), false},
-    {0.62, V3(26, 11, 36), V3(28, 8, 0), true},     -- lia nhanh sang Sukuna
-    {0.70, V3(22, 10, 30), V3(24, 8, 0), false},
-    {0.74, V3(14, 9, 25), V3(14, 8, 0), false},
+    {0.00, V3(-50, 10, 28), V3(-40, 5, 0), false},
+    {0.40, V3(-44, 8, 18), V3(-36, 5, 0), false},
+    {0.50, V3(-42, 7, 14), V3(-32, 5, 0), false},
+    {0.545, V3(-43, 7, 15), V3(-30, 5, 0), false},
+    {0.62, V3(26, 10, 30), V3(28, 6, 0), true},
+    {0.70, V3(22, 9, 24), V3(24, 6, 0), false},
+    {0.74, V3(14, 8, 20), V3(14, 6, 0), false},
 }
 local function camAt(u)
     local n = #camKeys
@@ -579,7 +400,7 @@ local function camAt(u)
 end
 
 ------------------------------------------------------------
--- OVERLAY 2D: lớp lộ ra, 2 mảnh trắng, vết chém, loading...
+-- OVERLAY 2D & HIỆU ỨNG GIAO DIỆN
 ------------------------------------------------------------
 local nameLbl = new("TextLabel", {
     AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.86), Size = UDim2.fromOffset(500, 50),
@@ -603,25 +424,14 @@ if DOMAIN_IMAGE_ID ~= 0 then
     setupImage(domainImg, DOMAIN_IMAGE_ID, "LANH DIA")
 end
 
-local title
-if TITLE_IMAGE_ID ~= 0 then
-    title = new("ImageLabel", {
-        AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0.7, 0, 0, 180),
-        BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(TITLE_IMAGE_ID),
-        ScaleType = Enum.ScaleType.Fit, ImageTransparency = 1, Rotation = TEAR_ANGLE, ZIndex = 3,
-    }, reveal)
-    setupImage(title, TITLE_IMAGE_ID, "TIEU DE")
-else
-    title = new("TextLabel", {
-        AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0.95, 0, 0, 110),
-        BackgroundTransparency = 1, Text = "GOJO  VS  SUKUNA", Font = Enum.Font.GothamBlack,
-        TextSize = 74, TextColor3 = WHITE, TextStrokeColor3 = RED, TextStrokeTransparency = 0.2,
-        TextTransparency = 1, Rotation = TEAR_ANGLE, ZIndex = 3,
-    }, reveal)
-end
+local title = new("TextLabel", {
+    AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0.95, 0, 0, 110),
+    BackgroundTransparency = 1, Text = "GOJO  VS  SUKUNA", Font = Enum.Font.GothamBlack,
+    TextSize = 74, TextColor3 = WHITE, TextStrokeColor3 = RED, TextStrokeTransparency = 0.2,
+    TextTransparency = 1, Rotation = TEAR_ANGLE, ZIndex = 3,
+}, reveal)
 local titleScale = new("UIScale", {Scale = 1.25}, title)
 
--- 2 mảnh trắng bị xé toạc theo đường chéo
 local L = 6000
 local trad = math.rad(TEAR_ANGLE)
 local nx, ny = -math.sin(trad), math.cos(trad)
@@ -641,135 +451,26 @@ local function makeHalf(isA)
 end
 local halfA, edgeA = makeHalf(true)
 local halfB, edgeB = makeHalf(false)
+local slashLayer = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 11}, root)
 
-local slashLayer = new("Frame", {
-    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 11,
-}, root)
+local tint = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundColor3 = BLUE, BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 29}, root)
+local flash = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundColor3 = WHITE, BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 30}, root)
 
--- Vết chém 2D (cho giai đoạn xé màn trắng)
-local slashes = {}
-local function spawnSlash(t, o)
-    local len = gui.AbsoluteSize.X * (o.lenMul or rng:NextNumber(0.3, 0.65))
-    local f = new("Frame", {
-        AnchorPoint = V2(0.5, 0.5),
-        Position = UDim2.fromScale(
-            rng:NextNumber(o.x1 or 0.5, o.x2 or 0.95),
-            rng:NextNumber(o.y1 or 0.2, o.y2 or 0.8)
-        ),
-        Size = UDim2.fromOffset(0, o.th or 5), Rotation = o.rot or rng:NextNumber(-50, 50),
-        BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 6,
-    }, o.parent or slashLayer)
-    new("UIGradient", {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, o.c1 or RED),
-            ColorSequenceKeypoint.new(0.5, o.c2 or WHITE),
-            ColorSequenceKeypoint.new(1, o.c1 or RED),
-        }),
-    }, f)
-    local life = o.life or rng:NextNumber(0.25, 0.45)
-    table.insert(slashes, {
-        f = f, born = t, life = life, len = len, th = o.th or 5,
-        drawT = o.drawT or (life / 3), hold = o.hold or 0,
-    })
-end
-
--- Tint màu (xanh lúc Gojo hiện, tím lúc va chạm, đỏ lúc Sukuna hiện) + flash trắng
-local tint = new("Frame", {
-    Size = UDim2.fromScale(1, 1), BackgroundColor3 = BLUE, BackgroundTransparency = 1,
-    BorderSizePixel = 0, ZIndex = 29,
-}, root)
-local flash = new("Frame", {
-    Size = UDim2.fromScale(1, 1), BackgroundColor3 = WHITE, BackgroundTransparency = 1,
-    BorderSizePixel = 0, ZIndex = 30,
-}, root)
 local function pulse(u, u0, dur, peak)
     local d = math.abs(u - u0) / dur
     if d < 1 then return peak * (1 - d) end
     return 0
 end
 
--- Thanh điện ảnh
-local barTop = new("Frame", {
-    Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, -0.1),
-    BackgroundColor3 = BLACK, BorderSizePixel = 0, ZIndex = 20,
-}, root)
-local barBot = new("Frame", {
-    Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, 1),
-    BackgroundColor3 = BLACK, BorderSizePixel = 0, ZIndex = 20,
-}, root)
-
--- Vòng loading + thanh loading 2 bên
-local function makeSide(isLeft)
-    local side = new("Frame", {
-        BackgroundTransparency = 1, Size = UDim2.new(0, 120, 0.7, 0),
-        AnchorPoint = V2(isLeft and 0 or 1, 0.5),
-        Position = UDim2.new(isLeft and 0 or 1, isLeft and 40 or -40, 0.5, 0), ZIndex = 12,
-    }, root)
-
-    local ring = new("Frame", {
-        Size = UDim2.fromOffset(90, 90), AnchorPoint = V2(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0, 0), BackgroundTransparency = 1, ZIndex = 12,
-    }, side)
-
-    local track = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 12}, ring)
-    new("UICorner", {CornerRadius = UDim.new(1, 0)}, track)
-    new("UIStroke", {Thickness = 4, Color = Color3.fromRGB(40, 40, 70)}, track)
-
-    local arc = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 13}, ring)
-    new("UICorner", {CornerRadius = UDim.new(1, 0)}, arc)
-    local arcStroke = new("UIStroke", {Thickness = 5, Color = WHITE}, arc)
-    local arcGrad = new("UIGradient", {
-        Color = ColorSequence.new(isLeft and BLUE or RED, WHITE),
-        Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.45, 0),
-            NumberSequenceKeypoint.new(0.5, 1), NumberSequenceKeypoint.new(1, 1),
-        }),
-    }, arcStroke)
-
-    local pct = new("TextLabel", {
-        Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "0%",
-        Font = Enum.Font.GothamBold, TextSize = 20, TextColor3 = WHITE,
-        TextStrokeTransparency = 0.5, ZIndex = 14,
-    }, ring)
-
-    local barBg = new("Frame", {
-        AnchorPoint = V2(0.5, 0), Position = UDim2.new(0.5, 0, 0, 110), Size = UDim2.new(0, 10, 1, -110),
-        BackgroundColor3 = Color3.fromRGB(25, 25, 45), BorderSizePixel = 0, ZIndex = 12,
-    }, side)
-    new("UICorner", {CornerRadius = UDim.new(1, 0)}, barBg)
-
-    local fill = new("Frame", {
-        AnchorPoint = V2(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0),
-        BackgroundColor3 = isLeft and BLUE or RED, BorderSizePixel = 0, ZIndex = 13,
-    }, barBg)
-    new("UICorner", {CornerRadius = UDim.new(1, 0)}, fill)
-    new("UIGradient", {
-        Color = ColorSequence.new(isLeft and BLUE or RED, WHITE), Rotation = 90,
-    }, fill)
-
-    return {arcGrad = arcGrad, pct = pct, fill = fill, dir = isLeft and 1 or -1}
-end
-local sides = {makeSide(true), makeSide(false)}
-
--- Lịch các nhát chém mảnh đỏ / đen xé màn trắng
-local tearSeq = {
-    {rot = -38, c1 = RED,   c2 = BLACK},
-    {rot = 31,  c1 = BLACK, c2 = RED},
-    {rot = -64, c1 = RED,   c2 = BLACK},
-    {rot = 52,  c1 = BLACK, c2 = RED},
-    {rot = -12, c1 = RED,   c2 = BLACK},
-    {rot = TEAR_ANGLE, c1 = BLACK, c2 = RED, main = true},
-}
-local tearDone = {}
+local barTop = new("Frame", {Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, -0.1), BackgroundColor3 = BLACK, BorderSizePixel = 0, ZIndex = 20}, root)
+local barBot = new("Frame", {Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, 1), BackgroundColor3 = BLACK, BorderSizePixel = 0, ZIndex = 20}, root)
 
 ------------------------------------------------------------
 -- VÒNG LẶP CHÍNH
 ------------------------------------------------------------
 local D = DURATION
 local startTime = os.clock()
-local conn
-local finished = false
-local errShown = false
+local conn, finished = nil, false
 local lastSlash3, lastDomain, domainCount = 0, 0, 0
 local burst = 0
 local flagCollide, flagFire, flagSukuna = false, false, false
@@ -783,7 +484,7 @@ local function finish()
     gui:Destroy()
     task.spawn(RunMainScript)
 end
-task.delay(D + 2, finish)   -- dự phòng: nếu vòng lặp lỗi vẫn chạy script chính
+task.delay(D + 2, finish)
 
 local function step(dt)
     local t = os.clock() - startTime
@@ -792,9 +493,6 @@ local function step(dt)
     local T_EXPLODE = 0.74
     local T_TEARSLASH, T_TEAR, T_OPEN2, T_OFF, T_END = 0.775, 0.815, 0.86, 0.90, 0.97
 
-    ----------------------------------------------------
-    -- Fade vào / ra
-    ----------------------------------------------------
     local finalFade = sm(T_END, 1, u)
     local fadeIn = 1 - sm(0, 0.05, u)
     root.GroupTransparency = math.max(fadeIn, finalFade)
@@ -807,9 +505,6 @@ local function step(dt)
     barTop.Position = UDim2.fromScale(0, -0.1 + 0.1 * bar)
     barBot.Position = UDim2.fromScale(0, 1 - 0.1 * bar)
 
-    ----------------------------------------------------
-    -- Mốc sự kiện (rung màn hình)
-    ----------------------------------------------------
     if u >= 0.50 and not flagCollide then flagCollide = true; burst = 24 end
     if u >= 0.545 and not flagFire then flagFire = true; burst = 18 end
     if u >= 0.60 and not flagSukuna then flagSukuna = true; burst = 12 end
@@ -830,116 +525,56 @@ local function step(dt)
     root.Position = UDim2.fromOffset(shx, shy)
     vp.Position = UDim2.fromOffset(shx, shy)
 
-    ----------------------------------------------------
-    -- CAMERA 3D
-    ----------------------------------------------------
     local cpos, ctarget = camAt(u)
     cpos += V3(math.sin(t * 0.5) * 1.0, math.sin(t * 0.7) * 0.4, 0)
-    if amp > 0 then
-        cpos += V3((rng:NextNumber() - 0.5), (rng:NextNumber() - 0.5), 0) * amp * 0.03
-    end
+    if amp > 0 then cpos += V3(rng:NextNumber() - 0.5, rng:NextNumber() - 0.5, 0) * amp * 0.03 end
     cam.CFrame = CFrame.lookAt(cpos, ctarget)
 
     if u < T_EXPLODE + 0.01 then
-        ----------------------------------------------------
-        -- GOJO
-        ----------------------------------------------------
+        -- Gojo xuất hiện
         local appear = sm(0.03, 0.12, u)
-        local raise = sm(0.12, 0.24, u)
-        local swing = sm(0.40, 0.50, u)
-        local thrust = sm(0.52, 0.56, u)
-        local upX = 0.1 + 1.25 * raise + 0.2 * swing
-        upX = upX + (1.57 - upX) * thrust
-        local upSp = 0.6 * raise * (1 - swing)
-        local recoil = 1.5 * (sm(0.54, 0.56, u) - sm(0.56, 0.62, u))
-        local gRoot = CFrame.lookAt(G_POS + V3(-recoil, -2 * (1 - appear), 0), G_POS + V3(-recoil, -2 * (1 - appear), 0) + gojoDir)
-        gojo.setTransparency(1 - appear)
-        gojo.pose(gRoot, {upX = upX, upSp = upSp, lowX = 0.1, lowSp = 0.1})
+        gojoPlane.Transparency = 1 - appear
+        gojoPlane.CFrame = CFrame.lookAt(G_POS, G_POS + gojoDir)
 
-        gojoAura.Position = G_POS + V3(-recoil, 6, 0)
-        local gaSize = 15 + 2 * math.sin(t * 6) + 6 * raise
+        gojoAura.Position = G_POS + V3(0, 3, 0)
+        local gaSize = 12 + 2 * math.sin(t * 6)
         gojoAura.Size = V3(gaSize, gaSize, gaSize)
-        gojoAura.Transparency = 1 - (0.1 + 0.15 * raise) * appear
+        gojoAura.Transparency = 1 - 0.2 * appear
 
-        ----------------------------------------------------
-        -- Quả XANH + ĐỎ -> va chạm -> TÍM
-        ----------------------------------------------------
+        -- Quả cầu năng lượng
         local orbAppear = sm(0.16, 0.28, u)
         local gone = 1 - sm(0.495, 0.505, u)
-        local osize = 0.5 + 4.0 * orbAppear + 1.0 * sm(0.28, 0.40, u)
+        local osize = 0.5 + 3.5 * orbAppear + 1.0 * sm(0.28, 0.40, u)
         local oint = orbAppear * gone
-        local spin = 2 + 6 * sm(0.30, 0.50, u)
         local m = clamp01((u - 0.40) / 0.10)
         local m2 = m * m
-        local bob = V3(0, math.sin(t * 3) * 0.25, 0)
-        blueOrb.update(HOLD_BLUE:Lerp(CP, m2) + bob, osize, oint, t, spin)
-        redOrb.update(HOLD_RED:Lerp(CP, m2) + bob, osize, oint, t, -spin)
+        blueOrb.update(HOLD_BLUE:Lerp(CP, m2), osize, oint)
+        redOrb.update(HOLD_RED:Lerp(CP, m2), osize, oint)
 
         local pu = clamp01((u - 0.50) / 0.04)
         local pf = clamp01((u - 0.545) / 0.175)
         local ppos = CP:Lerp(HIT, pf ^ 1.6)
-        local psize = 4 + 9 * ease(pu) + 3 * pf + 60 * (sm(0.72, 0.742, u) ^ 2)
+        local psize = 3 + 8 * ease(pu) + 50 * (sm(0.72, 0.742, u) ^ 2)
         local pint = sm(0.50, 0.515, u) * (1 - sm(0.742, 0.748, u))
-        purpleOrb.update(ppos + V3(rng:NextNumber() - 0.5, rng:NextNumber() - 0.5, 0) * (u < 0.545 and 0.4 or 0.1), psize, pint, t, 5)
+        purpleOrb.update(ppos, psize, pint)
 
-        ----------------------------------------------------
-        -- SUKUNA + NGÔI ĐỀN
-        ----------------------------------------------------
+        -- Sukuna & Đền xuất hiện
         local sApp = sm(0.56, 0.62, u)
-        local sUp = 0.3 + 2.0 * sm(0.60, 0.66, u)
-        local sRoot = CFrame.lookAt(S_POS, S_POS + sukunaDir)
-        sukuna.setTransparency(1 - sApp)
-        sukuna.pose(sRoot, {upX = sUp, upSp = 0.2, lowX = 0.5, lowSp = 0.25})
-        sukunaAura.Position = S_POS + V3(0, 6, 0)
-        local saSize = 17 + 2 * math.sin(t * 7) + 5 * sm(0.62, 0.70, u)
-        sukunaAura.Size = V3(saSize, saSize, saSize)
-        sukunaAura.Transparency = 1 - (0.1 + 0.15 * sm(0.62, 0.70, u)) * sApp
+        sukunaPlane.Transparency = 1 - sApp
+        sukunaPlane.CFrame = CFrame.lookAt(S_POS, S_POS + sukunaDir)
+
+        sukunaAura.Position = S_POS + V3(0, 3, 0)
+        sukunaAura.Size = V3(14, 14, 14)
+        sukunaAura.Transparency = 1 - 0.2 * sApp
 
         local rise = sm(0.62, 0.69, u)
         if u >= 0.58 then
-            local shPos = SH_POS + V3(0, -40 * (1 - rise), 0)
-            if rise < 1 then burst = math.max(burst, 5) end
-            shrine.pose(CFrame.lookAt(shPos, shPos + shrineDir), {upX = 0, upSp = 0, lowX = 0, lowSp = 0})
-        end
-
-        -- Lá chắn đỏ quanh ngôi đền (loé mạnh khi quả tím đập vào)
-        shield.Position = SH_POS + V3(0, 10, 0)
-        local shTr = 1
-        if rise > 0.8 then
-            shTr = 0.9 + 0.03 * math.sin(t * 8)
-            shTr = shTr - 0.55 * sm(0.70, 0.73, u)
-        end
-        shield.Transparency = shTr
-
-        -- Vệt chém 3D toả ra từ ngôi đền
-        if u >= 0.62 then
-            local rate = 8 + 10 * sm(0.62, 0.74, u)
-            if t - lastSlash3 > 1 / rate then
-                lastSlash3 = t
-                spawn3DSlash(t)
-            end
-        end
-        local center = SH_POS + V3(0, 12, 0)
-        for _, s in ipairs(slash3) do
-            if s.active then
-                local age = (t - s.born) / s.life
-                if age >= 1 then
-                    s.active = false
-                    s.p.Transparency = 1
-                else
-                    local curLen = math.max(s.len * ease(clamp01(age * 3)), 0.05)
-                    local c = center + s.d * (s.r0 + curLen / 2)
-                    s.p.Size = V3(s.th, s.th, curLen)
-                    s.p.CFrame = CFrame.lookAt(c, c + s.d)
-                    s.p.Transparency = age > 0.5 and ((age - 0.5) / 0.5) ^ 2 or 0
-                end
-            end
+            local shPos = SH_POS + V3(0, -30 * (1 - rise), 0)
+            shrine.pose(CFrame.lookAt(shPos, shPos + shrineDir))
+            shrine.setTransparency(1 - rise)
         end
     end
 
-    ----------------------------------------------------
-    -- Tên nhân vật + ảnh mờ phía sau
-    ----------------------------------------------------
     local nameText, nameCol, nameVis
     if u < 0.56 then
         nameText, nameCol = "GOJO", BLUE
@@ -955,16 +590,6 @@ local function step(dt)
     end
     nameLbl.TextTransparency = 1 - nameVis
 
-    if gojoImg then
-        local pa = sm(0.04, 0.12, u) * (1 - sm(0.46, 0.52, u))
-        gojoImg.ImageTransparency = 1 - 0.55 * pa * (1 - finalFade)
-    end
-    if sukunaImg then
-        local pa = sm(0.60, 0.66, u) * (1 - sm(0.70, 0.74, u))
-        sukunaImg.ImageTransparency = 1 - 0.55 * pa * (1 - finalFade)
-    end
-
-    -- Tint màu theo sự kiện
     local aB = pulse(u, 0.06, 0.03, 0.5)
     local aP = pulse(u, 0.50, 0.03, 0.7)
     local aR = pulse(u, 0.60, 0.03, 0.5)
@@ -974,14 +599,10 @@ local function step(dt)
     else tint.BackgroundColor3 = BLUE end
     tint.BackgroundTransparency = 1 - aMax
 
-    ----------------------------------------------------
-    -- NỔ -> màn hình trắng xoá
-    ----------------------------------------------------
     local fl
     if u < T_EXPLODE - 0.002 then fl = 1
     elseif u < T_EXPLODE + 0.002 then fl = 1 - (u - (T_EXPLODE - 0.002)) / 0.004
-    elseif u < T_EXPLODE + 0.03 then fl = (u - (T_EXPLODE + 0.002)) / 0.028
-    else fl = 1 end
+    else fl = (u - (T_EXPLODE + 0.002)) / 0.028 end
     flash.BackgroundTransparency = math.clamp(fl, 0, 1)
 
     local whiteOn = u >= T_EXPLODE and u < T_OFF + 0.005
@@ -992,104 +613,17 @@ local function step(dt)
     halfA.BackgroundTransparency = wTrans
     halfB.BackgroundTransparency = wTrans
 
-    ----------------------------------------------------
-    -- Vết chém mảnh đỏ / đen xé toạc màn trắng
-    ----------------------------------------------------
-    for i, s in ipairs(tearSeq) do
-        if not tearDone[i] and u >= T_TEARSLASH + (i - 1) * 0.0075 then
-            tearDone[i] = true
-            spawnSlash(t, {
-                parent = slashLayer,
-                x1 = s.main and 0.5 or 0.35, x2 = s.main and 0.5 or 0.65,
-                y1 = s.main and 0.5 or 0.35, y2 = s.main and 0.5 or 0.65,
-                rot = s.rot, lenMul = 2.2, th = s.main and 6 or 4,
-                c1 = s.c1, c2 = s.c2,
-                life = math.max(T_OPEN2 * D - t, 0.8), drawT = 0.12, hold = 0.75,
-            })
-            burst = 14
-        end
-    end
-
-    -- Đường xé: 2 mảnh trắng tách ra theo đường chéo
-    local g = 260 * sm(T_TEAR, T_TEAR + 0.025, u) + 2740 * sm(T_OPEN2, T_OFF, u)
-    local wedge = 3 * sm(T_TEAR, T_TEAR + 0.025, u)
-    local off = L / 2 + g / 2
-    halfA.Position = UDim2.new(0.5, nx * off, 0.5, ny * off)
-    halfB.Position = UDim2.new(0.5, -nx * off, 0.5, -ny * off)
-    halfA.Rotation = TEAR_ANGLE + wedge
-    halfB.Rotation = TEAR_ANGLE - wedge
-    local edgeT = 1 - sm(T_TEAR, T_TEAR + 0.004, u)
-    edgeA.BackgroundTransparency = edgeT
-    edgeB.BackgroundTransparency = edgeT
-
-    -- Chữ GOJO VS SUKUNA hiện ở chỗ rách + ảnh lãnh địa
-    local ts = sm(T_TEAR + 0.005, T_TEAR + 0.025, u)
-    if title:IsA("TextLabel") then
-        title.TextTransparency = 1 - ts
-        title.TextStrokeTransparency = 1 - 0.8 * ts
-    else
-        title.ImageTransparency = 1 - ts
-    end
-    titleScale.Scale = 1.25 - 0.25 * sm(T_TEAR, T_OFF, u)
-    if domainScale then
-        domainScale.Scale = 1.2 - 0.2 * sm(T_TEAR, T_END, u)
-    end
-
-    -- Gojo bị chém liên tục bởi vết chém đỏ của Sukuna (nửa trái màn hình)
-    if u >= 0.83 and u < T_END - 0.005 and t - lastDomain > 1 / 9 then
-        lastDomain = t
-        domainCount += 1
-        local black = domainCount % 3 == 0
-        local life = rng:NextNumber(0.3, 0.5)
-        spawnSlash(t, {
-            parent = slashLayer, x1 = 0.03, x2 = 0.6, y1 = 0.1, y2 = 0.9,
-            rot = rng:NextNumber(-60, 60), lenMul = rng:NextNumber(0.3, 0.6), th = 7,
-            c1 = black and BLACK or RED, c2 = black and RED or WHITE,
-            life = life, drawT = life / 3, hold = 0,
-        })
-        burst = math.max(burst, 8)
-    end
-
-    -- Cập nhật vết chém 2D
-    for i = #slashes, 1, -1 do
-        local s = slashes[i]
-        local age = (t - s.born) / s.life
-        if age >= 1 then
-            s.f:Destroy()
-            table.remove(slashes, i)
-        else
-            local draw = ease(clamp01((t - s.born) / s.drawT))
-            local fadeK = 0
-            if age > s.hold then fadeK = (age - s.hold) / (1 - s.hold) end
-            s.f.Size = UDim2.fromOffset(s.len * draw, s.th * (1 - fadeK) + 1)
-            s.f.BackgroundTransparency = fadeK ^ 2
-        end
-    end
-
-    ----------------------------------------------------
-    -- Loading UI
-    ----------------------------------------------------
-    for _, s in ipairs(sides) do
-        s.arcGrad.Rotation = (t * 360) % 360 * s.dir
-        s.pct.Text = string.format("%d%%", math.floor(u * 100))
-        s.fill.Size = UDim2.fromScale(1, u)
-    end
-
     if u >= 1 then finish() end
 end
 
 conn = RunService.RenderStepped:Connect(function(dt)
-    local ok, e = pcall(step, dt)
-    if not ok and not errShown then
-        errShown = true
-        warn("[Intro] LOI vong lap: " .. tostring(e))
-    end
+    pcall(step, dt)
 end)
 
-print("[Intro] khoi tao xong")
+print("[Intro] da khoi tao xong (3D PNG Phang)")
 end)
 
 if not __ok then
     warn("[Intro] LOI: " .. tostring(__err))
-    task.spawn(RunMainScript) -- intro hỏng thì vẫn chạy script chính
+    task.spawn(RunMainScript)
 end
