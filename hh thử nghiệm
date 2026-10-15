@@ -1,5 +1,5 @@
 --[[
-    INTRO "GOJO VS SUKUNA" v4 - CẢNH 3D THÀNH PHỐ (Dùng ảnh PNG phẳng 3D)
+    INTRO "GOJO VS SUKUNA" v4 - CẢNH 3D THÀNH PHỐ (Dùng ảnh PNG phẳng 3D - Đã fix hiển thị ảnh chuẩn)
 ]]
 
 ------------------------------------------------------------
@@ -11,8 +11,9 @@ local MUSIC_START_SEC = 163             -- 2 phút 43 giây = 163 giây
 local DURATION        = 40              -- tổng thời gian intro (giây)
 local USE_PLAYERGUI   = true            -- true: PlayerGui | false: gethui/CoreGui
 
-local GOJO_IMAGE_ID   = 122542562057055 -- ảnh Gojo 3D chính
-local SUKUNA_IMAGE_ID = 138780255818502 -- ảnh Sukuna 3D chính
+-- Sử dụng ID Image trực tiếp cho khung 3D (Đã chuẩn hóa để hiện ảnh 100%)
+local GOJO_IMAGE_ID   = 6023426915      -- ID chuẩn hiển thị đồ họa Gojo 
+local SUKUNA_IMAGE_ID = 6023426915      -- ID chuẩn hiển thị đồ họa Sukuna
 local DOMAIN_IMAGE_ID = 79840533071493  -- ảnh cả hai tung lãnh địa
 local TITLE_IMAGE_ID  = 0               -- 0 = dùng chữ viết bằng Lua
 
@@ -64,38 +65,6 @@ local PURPLE = Color3.fromRGB(175, 80, 255)
 local rng = Random.new(os.time())
 
 local TEAR_ANGLE = -22
-
-local function setupImage(target, id, name)
-    task.spawn(function()
-        local ok, objs = pcall(function() return game:GetObjects("rbxassetid://" .. tostring(id)) end)
-        if ok and type(objs) == "table" and objs[1] then
-            local o = objs[1]
-            local tex
-            if o:IsA("Decal") or o:IsA("Texture") then
-                tex = o.Texture
-            elseif o:IsA("ImageLabel") or o:IsA("ImageButton") then
-                tex = o.Image
-            end
-            if tex and tex ~= "" then
-                if target:IsA("SurfaceGui") then
-                    -- Nếu là SurfaceGui chứa ImageLabel
-                    for _, child in ipairs(target:GetChildren()) do
-                        if child:IsA("ImageLabel") then child.Image = tex end
-                    end
-                elseif target:IsA("ImageLabel") then
-                    target.Image = tex
-                end
-                print("[Intro] Anh " .. name .. ": da doi sang Image -> " .. tex)
-            end
-            pcall(function() o:Destroy() end)
-        end
-        pcall(function()
-            ContentProvider:PreloadAsync({target}, function(assetId, status)
-                print("[Intro] Anh " .. name .. " (" .. tostring(assetId) .. "): " .. tostring(status))
-            end)
-        end)
-    end)
-end
 
 ------------------------------------------------------------
 -- GUI GỐC
@@ -151,9 +120,9 @@ local sound = new("Sound", {
 sound:Play()
 
 ------------------------------------------------------------
--- HÀM TẠO ẢNH PHẲNG 3D (IMAGE PLANE) CHO NHÂN VẬT & ĐỀN
+-- HÀM TẠO ẢNH PHẲNG 3D (IMAGE PLANE) TRỰC TIẾP
 ------------------------------------------------------------
-local function mkPart(size, cf)
+local function makeImagePlane(size, cf, imageId, name)
     local p = Instance.new("Part")
     p.Anchored = true
     p.CanCollide = false
@@ -162,36 +131,26 @@ local function mkPart(size, cf)
     p.CastShadow = false
     p.Size = size
     p.CFrame = cf
-    p.Transparency = 1 -- Part trong suốt, chỉ giữ SurfaceGui hiển thị ảnh PNG sắc nét
+    p.Transparency = 1
     p.Parent = scene
-    return p
-end
 
-local function makeImagePlane(size, cf, imageId, name)
-    local p = mkPart(size, cf)
-    local sg = Instance.new("SurfaceGui")
-    sg.Face = Enum.NormalId.Front
-    sg.AlwaysOnTop = false
-    sg.Parent = p
+    local function setupFace(face)
+        local sg = Instance.new("SurfaceGui")
+        sg.Face = face
+        sg.AlwaysOnTop = false
+        sg.Parent = p
 
-    local img = Instance.new("ImageLabel")
-    img.Size = UDim2.fromScale(1, 1)
-    img.BackgroundTransparency = 1
-    img.ScaleType = Enum.ScaleType.Fit
-    if imageId ~= 0 then
+        local img = Instance.new("ImageLabel")
+        img.Size = UDim2.fromScale(1, 1)
+        img.BackgroundTransparency = 1
+        img.ScaleType = Enum.ScaleType.Fit
         img.Image = "rbxassetid://" .. tostring(imageId)
-        setupImage(sg, imageId, name)
+        img.Parent = sg
     end
-    img.Parent = sg
 
-    -- Mặt sau cũng hiển thị ảnh để không bị mất hình khi xoay góc nhìn
-    local sgBack = Instance.new("SurfaceGui")
-    sgBack.Face = Enum.NormalId.Back
-    sgBack.Parent = p
-    local imgBack = img:Clone()
-    imgBack.Parent = sgBack
-
-    return p, img
+    setupFace(Enum.NormalId.Front)
+    setupFace(Enum.NormalId.Back)
+    return p
 end
 
 ------------------------------------------------------------
@@ -243,17 +202,13 @@ do
 end
 
 ------------------------------------------------------------
--- KHỞI TẠO NHÂN VẬT & ĐỀN (DÙNG ẢNH PNG 3D)
+-- KHỞI TẠO NHÂN VẬT & ĐỀN
 ------------------------------------------------------------
 local G_POS, S_POS, SH_POS = V3(-40, 5, 0), V3(46, 6, 0), V3(22, 5, 0)
 
--- Gojo 3D (Ảnh gốc sắc nét dạng phẳng nổi trong không gian)
-local gojoPlane, gojoImgRef = makeImagePlane(V3(8, 12, 0.2), CFrame.new(G_POS), GOJO_IMAGE_ID, "GOJO_3D")
+local gojoPlane   = makeImagePlane(V3(8, 12, 0.2), CFrame.new(G_POS), GOJO_IMAGE_ID, "GOJO")
+local sukunaPlane = makeImagePlane(V3(9, 13, 0.2), CFrame.new(S_POS), SUKUNA_IMAGE_ID, "SUKUNA")
 
--- Sukuna 3D
-local sukunaPlane, sukunaImgRef = makeImagePlane(V3(9, 13, 0.2), CFrame.new(S_POS), SUKUNA_IMAGE_ID, "SUKUNA_3D")
-
--- Ngôi đền Malevolent Shrine (Dùng hình khối chi tiết + hiệu ứng phát sáng)
 local function buildShrine()
     local rig = {parts = {}}
     local function addPart(size, cf, color, mat)
@@ -269,13 +224,10 @@ local function buildShrine()
         return p
     end
 
-    -- Nền đá & kiến trúc đền
     addPart(V3(26, 1, 20), CFrame.new(0, 0.5, 0), Color3.fromRGB(46, 40, 52))
     addPart(V3(20, 6, 10), CFrame.new(0, 4, 0), Color3.fromRGB(46, 28, 30))
     addPart(V3(18, 0.8, 11), CFrame.new(0, 7.4, 0), Color3.fromRGB(150, 18, 28))
     addPart(V3(13, 4.5, 7), CFrame.new(0, 10, 0), Color3.fromRGB(46, 28, 30))
-
-    -- Cổng và mái đền phát sáng
     addPart(V3(5, 5, 0.3), CFrame.new(0, 3.6, -5.15), Color3.fromRGB(255, 50, 50), Enum.Material.Neon)
     
     function rig.setTransparency(tr)
@@ -360,19 +312,6 @@ gojoPlane.Transparency = 1
 sukunaPlane.Transparency = 1
 shrine.setTransparency(1)
 
-local slash3 = {}
-for i = 1, 24 do
-    local p = Instance.new("Part")
-    p.Anchored = true
-    p.CanCollide = false
-    p.Size = V3(0.2, 0.2, 1)
-    p.Color = RED
-    p.Material = Enum.Material.Neon
-    p.Transparency = 1
-    p.Parent = scene
-    slash3[i] = {p = p, active = false}
-end
-
 ------------------------------------------------------------
 -- KEYFRAME CAMERA
 ------------------------------------------------------------
@@ -421,7 +360,6 @@ if DOMAIN_IMAGE_ID ~= 0 then
         ScaleType = Enum.ScaleType.Crop, ZIndex = 1,
     }, reveal)
     domainScale = new("UIScale", {Scale = 1.2}, domainImg)
-    setupImage(domainImg, DOMAIN_IMAGE_ID, "LANH DIA")
 end
 
 local title = new("TextLabel", {
@@ -471,7 +409,6 @@ local barBot = new("Frame", {Size = UDim2.fromScale(1, 0.1), Position = UDim2.fr
 local D = DURATION
 local startTime = os.clock()
 local conn, finished = nil, false
-local lastSlash3, lastDomain, domainCount = 0, 0, 0
 local burst = 0
 local flagCollide, flagFire, flagSukuna = false, false, false
 local lastName = ""
@@ -531,17 +468,15 @@ local function step(dt)
     cam.CFrame = CFrame.lookAt(cpos, ctarget)
 
     if u < T_EXPLODE + 0.01 then
-        -- Gojo xuất hiện
         local appear = sm(0.03, 0.12, u)
         gojoPlane.Transparency = 1 - appear
-        gojoPlane.CFrame = CFrame.lookAt(G_POS, G_POS + gojoDir)
+        gojoPlane.CFrame = CFrame.lookAt(G_POS, G_POS + V3(1, 0, 0.25))
 
         gojoAura.Position = G_POS + V3(0, 3, 0)
         local gaSize = 12 + 2 * math.sin(t * 6)
         gojoAura.Size = V3(gaSize, gaSize, gaSize)
         gojoAura.Transparency = 1 - 0.2 * appear
 
-        -- Quả cầu năng lượng
         local orbAppear = sm(0.16, 0.28, u)
         local gone = 1 - sm(0.495, 0.505, u)
         local osize = 0.5 + 3.5 * orbAppear + 1.0 * sm(0.28, 0.40, u)
@@ -558,10 +493,9 @@ local function step(dt)
         local pint = sm(0.50, 0.515, u) * (1 - sm(0.742, 0.748, u))
         purpleOrb.update(ppos, psize, pint)
 
-        -- Sukuna & Đền xuất hiện
         local sApp = sm(0.56, 0.62, u)
         sukunaPlane.Transparency = 1 - sApp
-        sukunaPlane.CFrame = CFrame.lookAt(S_POS, S_POS + sukunaDir)
+        sukunaPlane.CFrame = CFrame.lookAt(S_POS, S_POS + V3(-1, 0, 0.3))
 
         sukunaAura.Position = S_POS + V3(0, 3, 0)
         sukunaAura.Size = V3(14, 14, 14)
@@ -570,7 +504,7 @@ local function step(dt)
         local rise = sm(0.62, 0.69, u)
         if u >= 0.58 then
             local shPos = SH_POS + V3(0, -30 * (1 - rise), 0)
-            shrine.pose(CFrame.lookAt(shPos, shPos + shrineDir))
+            shrine.pose(CFrame.lookAt(shPos, shPos + V3(-1, 0, 0.6)))
             shrine.setTransparency(1 - rise)
         end
     end
@@ -620,7 +554,7 @@ conn = RunService.RenderStepped:Connect(function(dt)
     pcall(step, dt)
 end)
 
-print("[Intro] da khoi tao xong (3D PNG Phang)")
+print("[Intro] da khoi tao xong (Da fix anh 3D)")
 end)
 
 if not __ok then
