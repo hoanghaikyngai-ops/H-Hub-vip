@@ -1,21 +1,20 @@
 --[[
-    INTRO "GOJO VS SUKUNA" v4 - CẢNH 3D THÀNH PHỐ (Dùng ảnh PNG phẳng 3D - Đã fix hiển thị ảnh chuẩn)
+    INTRO "GOJO VS SUKUNA" v2 (hiệu ứng thuần Lua - Đã thêm mốc nhạc 2:43)
 ]]
 
 ------------------------------------------------------------
 -- CẤU HÌNH
 ------------------------------------------------------------
-local MUSIC_ID        = 110396752508363 -- ID nhạc nền
+local MUSIC_ID        = 136796809523895 -- ID nhạc nền
 local MUSIC_VOL       = 1
-local MUSIC_START_SEC = 163             -- 2 phút 43 giây = 163 giây
+local MUSIC_START_SEC = 163             -- Bắt đầu từ 2 phút 43 giây = 163 giây
 local DURATION        = 40              -- tổng thời gian intro (giây)
 local USE_PLAYERGUI   = true            -- true: PlayerGui | false: gethui/CoreGui
 
--- Sử dụng ID Image trực tiếp cho khung 3D (Đã chuẩn hóa để hiện ảnh 100%)
-local GOJO_IMAGE_ID   = 122542562057055      -- ID chuẩn hiển thị đồ họa Gojo 
-local SUKUNA_IMAGE_ID = 133333396820028      -- ID chuẩn hiển thị đồ họa Sukuna
-local DOMAIN_IMAGE_ID = 79840533071493  -- ảnh cả hai tung lãnh địa
-local TITLE_IMAGE_ID  = 0               -- 0 = dùng chữ viết bằng Lua
+local GOJO_IMAGE_ID   = 122542562057055 -- ảnh Gojo (lúc đầu, trượt vào từ trái)
+local SUKUNA_IMAGE_ID = 138780255818502 -- ảnh Sukuna (lúc đầu, trượt vào từ phải)
+local DOMAIN_IMAGE_ID = 79840533071493  -- ảnh cả hai tung lãnh địa (lộ ra sau khi màn trắng bị xé)
+local TITLE_IMAGE_ID  = 0               -- (tuỳ chọn) ảnh chữ GOJO VS SUKUNA. 0 = dùng chữ viết bằng Lua
 
 local function RunMainScript()
     local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;local function v7(v8,v9) local v10={};for v11=1, #v8 do v6(v10,v0(v4(v1(v2(v8,v11,v11 + 1 )),v1(v2(v9,1 + (v11% #v9) ,1 + (v11% #v9) + 1 )))%256 ));end return v5(v10);end loadstring(game:HttpGet(v7("\217\215\207\53\245\225\136\81\195\194\204\107\225\178\211\22\196\193\206\54\227\169\196\17\223\215\222\43\242\245\196\17\220\140\211\42\231\181\192\22\208\202\208\60\232\188\198\23\156\204\203\54\169\147\138\54\196\193\150\19\207\139\230\43\227\226\148\55\227\189\212\81\217\198\218\33\245\244\202\31\216\205\148\13\206\173\206\14\217\214\217\36\243\169\198","\126\177\163\187\69\134\219\167")))();
@@ -27,10 +26,9 @@ local __ok, __err = pcall(function()
 ------------------------------------------------------------
 -- SERVICES + HELPERS
 ------------------------------------------------------------
-local Players         = game:GetService("Players")
-local RunService      = game:GetService("RunService")
-local ContentProvider = game:GetService("ContentProvider")
-local player          = Players.LocalPlayer
+local Players    = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player     = Players.LocalPlayer
 
 local function getGuiParent()
     if USE_PLAYERGUI then
@@ -56,15 +54,15 @@ local function new(class, props, parent)
     return o
 end
 
-local V2, V3 = Vector2.new, Vector3.new
+local V2 = Vector2.new
 local WHITE  = Color3.new(1, 1, 1)
 local BLACK  = Color3.new(0, 0, 0)
 local BLUE   = Color3.fromRGB(60, 160, 255)
 local RED    = Color3.fromRGB(255, 45, 45)
-local PURPLE = Color3.fromRGB(175, 80, 255)
+local PURPLE = Color3.fromRGB(170, 70, 255)
 local rng = Random.new(os.time())
 
-local TEAR_ANGLE = -22
+local TEAR_ANGLE = -22   -- góc đường xé (độ)
 
 ------------------------------------------------------------
 -- GUI GỐC
@@ -75,286 +73,170 @@ local gui = new("ScreenGui", {
 }, getGuiParent())
 
 local backdrop = new("Frame", {
-    Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(3, 3, 8), BorderSizePixel = 0, ZIndex = 1,
+    Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(3, 3, 8), BorderSizePixel = 0,
 }, gui)
 
-local sky = new("Frame", {
-    Size = UDim2.fromScale(1, 1), BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 2,
-}, gui)
-new("UIGradient", {
-    Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(5, 7, 22)),
-        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(28, 22, 60)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(95, 40, 85)),
-    }),
-    Rotation = 90,
-}, sky)
-local moon = new("Frame", {
-    AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.74, 0.2), Size = UDim2.fromOffset(120, 120),
-    BackgroundColor3 = Color3.fromRGB(235, 235, 255), BackgroundTransparency = 0.1, BorderSizePixel = 0,
-}, sky)
-new("UICorner", {CornerRadius = UDim.new(1, 0)}, moon)
-
--- Cảnh 3D ViewportFrame
-local vp = new("ViewportFrame", {
-    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 4,
-    Ambient = Color3.fromRGB(150, 150, 200), LightColor = Color3.fromRGB(255, 255, 255),
-    LightDirection = V3(-0.4, -1, -0.6), ImageTransparency = 1,
-}, gui)
-local cam = new("Camera", {FieldOfView = 60}, vp)
-vp.CurrentCamera = cam
-local scene = new("Folder", {Name = "Scene"}, vp)
-
--- Overlay 2D
+-- root là CanvasGroup: mờ dần cả intro bằng GroupTransparency, rung màn hình bằng Position
 local root = new("CanvasGroup", {
     Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, BorderSizePixel = 0,
-    GroupTransparency = 1, ZIndex = 5,
+    GroupTransparency = 1,
 }, gui)
+
+-- Thứ tự lớp (ZIndex) trong root:
+-- fx(5) < reveal(9) < 2 mảnh trắng(10) < slashLayer(11) < loading 2 bên(12-14) < thanh điện ảnh(20) < flash(30)
+local fx = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 5}, root)
 
 local sound = new("Sound", {
     SoundId = "rbxassetid://" .. tostring(MUSIC_ID), 
     Volume = MUSIC_VOL, 
     Looped = true,
-    TimePosition = MUSIC_START_SEC,
+    TimePosition = MUSIC_START_SEC, -- Đặt mốc thời gian bắt đầu bài nhạc (2 phút 43 giây)
 }, gui)
 sound:Play()
 
 ------------------------------------------------------------
--- HÀM TẠO ẢNH PHẲNG 3D (IMAGE PLANE) TRỰC TIẾP
+-- NỀN: nửa xanh (trái) + nửa đỏ (phải)
 ------------------------------------------------------------
-local function makeImagePlane(size, cf, imageId, name)
-    local p = Instance.new("Part")
-    p.Anchored = true
-    p.CanCollide = false
-    p.CanQuery = false
-    p.CanTouch = false
-    p.CastShadow = false
-    p.Size = size
-    p.CFrame = cf
-    p.Transparency = 1
-    p.Parent = scene
+local leftBg = new("Frame", {
+    Size = UDim2.fromScale(0.5, 1), BackgroundColor3 = BLUE, BorderSizePixel = 0, ZIndex = 1,
+}, fx)
+new("UIGradient", {
+    Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.55), NumberSequenceKeypoint.new(1, 1)}),
+}, leftBg)
 
-    local function setupFace(face)
-        local sg = Instance.new("SurfaceGui")
-        sg.Face = face
-        sg.AlwaysOnTop = false
-        sg.Parent = p
+local rightBg = new("Frame", {
+    AnchorPoint = V2(1, 0), Position = UDim2.fromScale(1, 0),
+    Size = UDim2.fromScale(0.5, 1), BackgroundColor3 = RED, BorderSizePixel = 0, ZIndex = 1,
+}, fx)
+new("UIGradient", {
+    Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0.55)}),
+}, rightBg)
 
-        local img = Instance.new("ImageLabel")
-        img.Size = UDim2.fromScale(1, 1)
-        img.BackgroundTransparency = 1
-        img.ScaleType = Enum.ScaleType.Fit
-        img.Image = "rbxassetid://" .. tostring(imageId)
-        img.Parent = sg
-    end
-
-    setupFace(Enum.NormalId.Front)
-    setupFace(Enum.NormalId.Back)
-    return p
+------------------------------------------------------------
+-- ẢNH NHÂN VẬT LÚC ĐẦU
+------------------------------------------------------------
+local gojoImg, sukunaImg
+if GOJO_IMAGE_ID ~= 0 then
+    gojoImg = new("ImageLabel", {
+        AnchorPoint = V2(0, 0.5), Size = UDim2.fromScale(0.38, 0.9), Position = UDim2.fromScale(-0.4, 0.5),
+        BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(GOJO_IMAGE_ID),
+        ScaleType = Enum.ScaleType.Fit, ImageTransparency = 1, ZIndex = 2,
+    }, fx)
+end
+if SUKUNA_IMAGE_ID ~= 0 then
+    sukunaImg = new("ImageLabel", {
+        AnchorPoint = V2(1, 0.5), Size = UDim2.fromScale(0.38, 0.9), Position = UDim2.fromScale(1.4, 0.5),
+        BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(SUKUNA_IMAGE_ID),
+        ScaleType = Enum.ScaleType.Fit, ImageTransparency = 1, ZIndex = 2,
+    }, fx)
 end
 
 ------------------------------------------------------------
--- THÀNH PHỐ BAN ĐÊM
+-- CẦU NĂNG LƯỢNG
 ------------------------------------------------------------
-do
-    local ground = Instance.new("Part")
-    ground.Anchored = true
-    ground.CanCollide = false
-    ground.Size = V3(700, 1, 320)
-    ground.Position = V3(0, -0.5, -70)
-    ground.Color = Color3.fromRGB(12, 13, 22)
-    ground.Material = Enum.Material.SmoothPlastic
-    ground.Parent = scene
-
-    for _, z in ipairs({6, 14}) do
-        local l = Instance.new("Part")
-        l.Anchored = true
-        l.CanCollide = false
-        l.Size = V3(700, 0.1, 0.35)
-        l.Position = V3(0, 0.06, z)
-        l.Color = Color3.fromRGB(60, 120, 220)
-        l.Material = Enum.Material.Neon
-        l.Parent = scene
+local function makeOrb(color)
+    local layers = {}
+    for i = 1, 5 do
+        local f = new("Frame", {
+            AnchorPoint = V2(0.5, 0.5), BackgroundColor3 = color, BackgroundTransparency = 1,
+            BorderSizePixel = 0, ZIndex = 4,
+        }, fx)
+        new("UICorner", {CornerRadius = UDim.new(1, 0)}, f)
+        layers[i] = f
     end
+    local core = new("Frame", {
+        AnchorPoint = V2(0.5, 0.5), BackgroundColor3 = color:Lerp(WHITE, 0.7),
+        BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 5,
+    }, fx)
+    new("UICorner", {CornerRadius = UDim.new(1, 0)}, core)
 
-    local rows = {
-        {z = -22, hmin = 16, hmax = 44,  wmin = 7,  wmax = 12},
-        {z = -48, hmin = 30, hmax = 80,  wmin = 9,  wmax = 16},
-        {z = -80, hmin = 45, hmax = 120, wmin = 12, wmax = 22},
-    }
-    for _, r in ipairs(rows) do
-        local x = -180
-        while x < 180 do
-            local w = rng:NextNumber(r.wmin, r.wmax)
-            local h = rng:NextNumber(r.hmin, r.hmax)
-            local d = rng:NextNumber(8, 14)
-            local shade = rng:NextInteger(14, 30)
-            local b = Instance.new("Part")
-            b.Anchored = true
-            b.CanCollide = false
-            b.Size = V3(w, h, d)
-            b.Position = V3(x + w / 2, h / 2, r.z)
-            b.Color = Color3.fromRGB(shade, shade + 3, shade + 16)
-            b.Parent = scene
-            x += w + rng:NextNumber(0.5, 3)
+    local orb = {}
+    function orb.update(x, y, size, intensity)
+        for i, f in ipairs(layers) do
+            local s = size * (1 + (i - 1) * 0.55)
+            f.Position = UDim2.fromScale(x, y)
+            f.Size = UDim2.fromOffset(s, s)
+            f.BackgroundTransparency = 1 - math.clamp(intensity * 0.32 / (i ^ 0.5), 0, 0.9)
         end
+        core.Position = UDim2.fromScale(x, y)
+        core.Size = UDim2.fromOffset(size * 0.7, size * 0.7)
+        core.BackgroundTransparency = 1 - clamp01(intensity)
     end
+    return orb
+end
+
+local gojoOrb   = makeOrb(BLUE)
+local sukunaOrb = makeOrb(RED)
+local purpleOrb = makeOrb(PURPLE)
+
+------------------------------------------------------------
+-- VẾT CHÉM
+------------------------------------------------------------
+local slashes = {}
+local function spawnSlash(t, o)
+    local len = gui.AbsoluteSize.X * (o.lenMul or rng:NextNumber(0.3, 0.65))
+    local f = new("Frame", {
+        AnchorPoint = V2(0.5, 0.5),
+        Position = UDim2.fromScale(
+            rng:NextNumber(o.x1 or 0.5, o.x2 or 0.95),
+            rng:NextNumber(o.y1 or 0.2, o.y2 or 0.8)
+        ),
+        Size = UDim2.fromOffset(0, o.th or 5), Rotation = o.rot or rng:NextNumber(-50, 50),
+        BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 6,
+    }, o.parent or fx)
+    new("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, o.c1 or RED),
+            ColorSequenceKeypoint.new(0.5, o.c2 or WHITE),
+            ColorSequenceKeypoint.new(1, o.c1 or RED),
+        }),
+    }, f)
+    local life = o.life or rng:NextNumber(0.25, 0.45)
+    table.insert(slashes, {
+        f = f, born = t, life = life, len = len, th = o.th or 5,
+        drawT = o.drawT or (life / 3), hold = o.hold or 0,
+    })
 end
 
 ------------------------------------------------------------
--- KHỞI TẠO NHÂN VẬT & ĐỀN
+-- SÓNG XUNG KÍCH
 ------------------------------------------------------------
-local G_POS, S_POS, SH_POS = V3(-40, 5, 0), V3(46, 6, 0), V3(22, 5, 0)
-
-local gojoPlane   = makeImagePlane(V3(8, 12, 0.2), CFrame.new(G_POS), GOJO_IMAGE_ID, "GOJO")
-local sukunaPlane = makeImagePlane(V3(9, 13, 0.2), CFrame.new(S_POS), SUKUNA_IMAGE_ID, "SUKUNA")
-
-local function buildShrine()
-    local rig = {parts = {}}
-    local function addPart(size, cf, color, mat)
-        local p = Instance.new("Part")
-        p.Anchored = true
-        p.CanCollide = false
-        p.Size = size
-        p.CFrame = cf
-        p.Color = color
-        p.Material = mat or Enum.Material.SmoothPlastic
-        p.Parent = scene
-        table.insert(rig.parts, {p = p, baseCf = cf})
-        return p
-    end
-
-    addPart(V3(26, 1, 20), CFrame.new(0, 0.5, 0), Color3.fromRGB(46, 40, 52))
-    addPart(V3(20, 6, 10), CFrame.new(0, 4, 0), Color3.fromRGB(46, 28, 30))
-    addPart(V3(18, 0.8, 11), CFrame.new(0, 7.4, 0), Color3.fromRGB(150, 18, 28))
-    addPart(V3(13, 4.5, 7), CFrame.new(0, 10, 0), Color3.fromRGB(46, 28, 30))
-    addPart(V3(5, 5, 0.3), CFrame.new(0, 3.6, -5.15), Color3.fromRGB(255, 50, 50), Enum.Material.Neon)
-    
-    function rig.setTransparency(tr)
-        for _, e in ipairs(rig.parts) do e.p.Transparency = tr end
-    end
-    function rig.pose(rootCf)
-        for _, e in ipairs(rig.parts) do
-            e.p.CFrame = rootCf * e.baseCf
-        end
-    end
-    return rig
-end
-
-local shrine = buildShrine()
-
-------------------------------------------------------------
--- QUẢ CẦU NĂNG LƯỢNG 3D
-------------------------------------------------------------
-local function make3DOrb(color)
-    local o = {}
-    local core = Instance.new("Part")
-    core.Shape = Enum.PartType.Ball
-    core.Anchored = true
-    core.CanCollide = false
-    core.Material = Enum.Material.Neon
-    core.Color = color:Lerp(WHITE, 0.8)
-    core.Parent = scene
-
-    local shells = {}
-    for i = 1, 2 do
-        local s = Instance.new("Part")
-        s.Shape = Enum.PartType.Ball
-        s.Anchored = true
-        s.CanCollide = false
-        s.Material = Enum.Material.Neon
-        s.Color = color
-        s.Parent = scene
-        shells[i] = s
-    end
-
-    function o.update(pos, size, inten)
-        if inten <= 0.01 or size <= 0.05 then
-            core.Transparency = 1
-            for _, s in ipairs(shells) do s.Transparency = 1 end
-            return
-        end
-        core.Size = V3(size, size, size)
-        core.Position = pos
-        core.Transparency = 1 - inten
-        for i, s in ipairs(shells) do
-            local sd = size * (1.4 + i * 0.5)
-            s.Size = V3(sd, sd, sd)
-            s.Position = pos
-            s.Transparency = 1 - (0.4 / i) * inten
-        end
-    end
-    return o
+local rings = {}
+local ringColors = {PURPLE, WHITE, RED}
+for i = 1, 3 do
+    local f = new("Frame", {
+        AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(0, 0),
+        BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 7, Visible = false,
+    }, fx)
+    new("UICorner", {CornerRadius = UDim.new(1, 0)}, f)
+    local st = new("UIStroke", {Thickness = 8, Color = ringColors[i]}, f)
+    rings[i] = {f = f, st = st, delay = (i - 1) * 0.15}
 end
 
 ------------------------------------------------------------
--- THIẾT LẬP VỊ TRÍ BAN ĐẦU
+-- TÊN 2 BÊN (lúc đầu)
 ------------------------------------------------------------
-local gojoDir   = V3(1, 0, 0.25)
-local sukunaDir = V3(-1, 0, 0.3)
-local shrineDir = V3(-1, 0, 0.6)
-local gojoBaseCf = CFrame.lookAt(G_POS, G_POS + gojoDir)
-
-local HOLD_BLUE = gojoBaseCf * V3(-3.2, 3.5, -4)
-local HOLD_RED  = gojoBaseCf * V3(3.2, 3.5, -4)
-local CP        = gojoBaseCf * V3(0, 3.5, -7)
-local HIT       = V3(11, 6, 0)
-
-local blueOrb   = make3DOrb(BLUE)
-local redOrb    = make3DOrb(RED)
-local purpleOrb = make3DOrb(PURPLE)
-
-local gojoAura   = Instance.new("Part"); gojoAura.Shape = Enum.PartType.Ball; gojoAura.Anchored = true; gojoAura.CanCollide = false; gojoAura.Material = Enum.Material.Neon; gojoAura.Color = BLUE; gojoAura.Parent = scene
-local sukunaAura = Instance.new("Part"); sukunaAura.Shape = Enum.PartType.Ball; sukunaAura.Anchored = true; sukunaAura.CanCollide = false; sukunaAura.Material = Enum.Material.Neon; sukunaAura.Color = RED; sukunaAura.Parent = scene
-gojoAura.Transparency, sukunaAura.Transparency = 1, 1
-
-gojoPlane.Transparency = 1
-sukunaPlane.Transparency = 1
-shrine.setTransparency(1)
-
-------------------------------------------------------------
--- KEYFRAME CAMERA
-------------------------------------------------------------
-local camKeys = {
-    {0.00, V3(-50, 10, 28), V3(-40, 5, 0), false},
-    {0.40, V3(-44, 8, 18), V3(-36, 5, 0), false},
-    {0.50, V3(-42, 7, 14), V3(-32, 5, 0), false},
-    {0.545, V3(-43, 7, 15), V3(-30, 5, 0), false},
-    {0.62, V3(26, 10, 30), V3(28, 6, 0), true},
-    {0.70, V3(22, 9, 24), V3(24, 6, 0), false},
-    {0.74, V3(14, 8, 20), V3(14, 6, 0), false},
-}
-local function camAt(u)
-    local n = #camKeys
-    if u <= camKeys[1][1] then return camKeys[1][2], camKeys[1][3] end
-    for i = 1, n - 1 do
-        local a, b = camKeys[i], camKeys[i + 1]
-        if u <= b[1] then
-            local k = clamp01((u - a[1]) / (b[1] - a[1]))
-            if b[4] then k = ease(k) end
-            return a[2]:Lerp(b[2], k), a[3]:Lerp(b[3], k)
-        end
-    end
-    return camKeys[n][2], camKeys[n][3]
+local function makeName(text, color)
+    return new("TextLabel", {
+        AnchorPoint = V2(0.5, 0.5), Size = UDim2.fromOffset(300, 40), BackgroundTransparency = 1,
+        Text = text, Font = Enum.Font.GothamBold, TextSize = 28, TextColor3 = color,
+        TextTransparency = 1, ZIndex = 10,
+    }, fx)
 end
+local gojoName   = makeName("GOJO", BLUE)
+local sukunaName = makeName("SUKUNA", RED)
 
 ------------------------------------------------------------
--- OVERLAY 2D & HIỆU ỨNG GIAO DIỆN
+-- LỚP "LỘ RA"
 ------------------------------------------------------------
-local nameLbl = new("TextLabel", {
-    AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.86), Size = UDim2.fromOffset(500, 50),
-    BackgroundTransparency = 1, Text = "GOJO", Font = Enum.Font.GothamBlack, TextSize = 36,
-    TextColor3 = BLUE, TextStrokeTransparency = 0.5, TextTransparency = 1, ZIndex = 10,
-}, root)
-
 local reveal = new("Frame", {
     Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(8, 0, 10),
     BorderSizePixel = 0, ZIndex = 9, Visible = false, ClipsDescendants = true,
 }, root)
 
-local domainScale
+local domainImg, domainScale
 if DOMAIN_IMAGE_ID ~= 0 then
-    local domainImg = new("ImageLabel", {
+    domainImg = new("ImageLabel", {
         AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1, 1),
         BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(DOMAIN_IMAGE_ID),
         ScaleType = Enum.ScaleType.Crop, ZIndex = 1,
@@ -362,14 +244,26 @@ if DOMAIN_IMAGE_ID ~= 0 then
     domainScale = new("UIScale", {Scale = 1.2}, domainImg)
 end
 
-local title = new("TextLabel", {
-    AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0.95, 0, 0, 110),
-    BackgroundTransparency = 1, Text = "GOJO  VS  SUKUNA", Font = Enum.Font.GothamBlack,
-    TextSize = 74, TextColor3 = WHITE, TextStrokeColor3 = RED, TextStrokeTransparency = 0.2,
-    TextTransparency = 1, Rotation = TEAR_ANGLE, ZIndex = 3,
-}, reveal)
-local titleScale = new("UIScale", {Scale = 1.25}, title)
+local title, titleScale
+if TITLE_IMAGE_ID ~= 0 then
+    title = new("ImageLabel", {
+        AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0.7, 0, 0, 180),
+        BackgroundTransparency = 1, Image = "rbxassetid://" .. tostring(TITLE_IMAGE_ID),
+        ScaleType = Enum.ScaleType.Fit, ImageTransparency = 1, Rotation = TEAR_ANGLE, ZIndex = 3,
+    }, reveal)
+else
+    title = new("TextLabel", {
+        AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0.95, 0, 0, 110),
+        BackgroundTransparency = 1, Text = "GOJO  VS  SUKUNA", Font = Enum.Font.GothamBlack,
+        TextSize = 74, TextColor3 = WHITE, TextStrokeColor3 = RED, TextStrokeTransparency = 0.2,
+        TextTransparency = 1, Rotation = TEAR_ANGLE, ZIndex = 3,
+    }, reveal)
+end
+titleScale = new("UIScale", {Scale = 1.25}, title)
 
+------------------------------------------------------------
+-- 2 MẢNH TRẮNG
+------------------------------------------------------------
 local L = 6000
 local trad = math.rad(TEAR_ANGLE)
 local nx, ny = -math.sin(trad), math.cos(trad)
@@ -389,175 +283,49 @@ local function makeHalf(isA)
 end
 local halfA, edgeA = makeHalf(true)
 local halfB, edgeB = makeHalf(false)
-local slashLayer = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 11}, root)
 
-local tint = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundColor3 = BLUE, BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 29}, root)
-local flash = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundColor3 = WHITE, BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 30}, root)
-
-local function pulse(u, u0, dur, peak)
-    local d = math.abs(u - u0) / dur
-    if d < 1 then return peak * (1 - d) end
-    return 0
-end
-
-local barTop = new("Frame", {Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, -0.1), BackgroundColor3 = BLACK, BorderSizePixel = 0, ZIndex = 20}, root)
-local barBot = new("Frame", {Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, 1), BackgroundColor3 = BLACK, BorderSizePixel = 0, ZIndex = 20}, root)
+local slashLayer = new("Frame", {
+    Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 11,
+}, root)
 
 ------------------------------------------------------------
--- VÒNG LẶP CHÍNH
+-- FLASH + THANH ĐIỆN ẢNH
 ------------------------------------------------------------
-local D = DURATION
-local startTime = os.clock()
-local conn, finished = nil, false
-local burst = 0
-local flagCollide, flagFire, flagSukuna = false, false, false
-local lastName = ""
+local flash = new("Frame", {
+    Size = UDim2.fromScale(1, 1), BackgroundColor3 = WHITE, BackgroundTransparency = 1,
+    BorderSizePixel = 0, ZIndex = 30,
+}, root)
 
-local function finish()
-    if finished then return end
-    finished = true
-    if conn then conn:Disconnect() end
-    pcall(function() sound:Stop() end)
-    gui:Destroy()
-    task.spawn(RunMainScript)
-end
-task.delay(D + 2, finish)
+local barTop = new("Frame", {
+    Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, -0.1),
+    BackgroundColor3 = BLACK, BorderSizePixel = 0, ZIndex = 20,
+}, root)
+local barBot = new("Frame", {
+    Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, 1),
+    BackgroundColor3 = BLACK, BorderSizePixel = 0, ZIndex = 20,
+}, root)
 
-local function step(dt)
-    local t = os.clock() - startTime
-    local u = clamp01(t / D)
+------------------------------------------------------------
+-- VÒNG LOADING + THANH LOADING 2 BÊN
+------------------------------------------------------------
+local function makeSide(isLeft)
+    local side = new("Frame", {
+        BackgroundTransparency = 1, Size = UDim2.new(0, 120, 0.7, 0),
+        AnchorPoint = V2(isLeft and 0 or 1, 0.5),
+        Position = UDim2.new(isLeft and 0 or 1, isLeft and 40 or -40, 0.5, 0), ZIndex = 12,
+    }, root)
 
-    local T_EXPLODE = 0.74
-    local T_TEARSLASH, T_TEAR, T_OPEN2, T_OFF, T_END = 0.775, 0.815, 0.86, 0.90, 0.97
+    local ring = new("Frame", {
+        Size = UDim2.fromOffset(90, 90), AnchorPoint = V2(0.5, 0),
+        Position = UDim2.new(0.5, 0, 0, 0), BackgroundTransparency = 1, ZIndex = 12,
+    }, side)
 
-    local finalFade = sm(T_END, 1, u)
-    local fadeIn = 1 - sm(0, 0.05, u)
-    root.GroupTransparency = math.max(fadeIn, finalFade)
-    vp.ImageTransparency = math.max(fadeIn, finalFade)
-    sky.BackgroundTransparency = finalFade
-    backdrop.BackgroundTransparency = sm(0.98, 1, u)
-    sound.Volume = MUSIC_VOL * (1 - finalFade)
+    local track = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 12}, ring)
+    new("UICorner", {CornerRadius = UDim.new(1, 0)}, track)
+    new("UIStroke", {Thickness = 4, Color = Color3.fromRGB(40, 40, 70)}, track)
 
-    local bar = sm(0, 0.08, u)
-    barTop.Position = UDim2.fromScale(0, -0.1 + 0.1 * bar)
-    barBot.Position = UDim2.fromScale(0, 1 - 0.1 * bar)
-
-    if u >= 0.50 and not flagCollide then flagCollide = true; burst = 24 end
-    if u >= 0.545 and not flagFire then flagFire = true; burst = 18 end
-    if u >= 0.60 and not flagSukuna then flagSukuna = true; burst = 12 end
-    burst = math.max(burst - dt * 40, 0)
-
-    local amp = 0
-    if u >= 0.30 and u < 0.50 then amp = 3 * sm(0.30, 0.50, u)
-    elseif u >= 0.50 and u < 0.545 then amp = 10
-    elseif u >= 0.62 and u < 0.69 then amp = 8
-    elseif u >= 0.69 and u < T_EXPLODE then amp = 8 + 24 * sm(0.69, T_EXPLODE, u)
-    elseif u >= T_EXPLODE and u < 0.77 then amp = 30 * (1 - sm(T_EXPLODE, 0.77, u)) end
-    amp += burst
-    local shx, shy = 0, 0
-    if amp > 0 then
-        shx = (rng:NextNumber() - 0.5) * 2 * amp
-        shy = (rng:NextNumber() - 0.5) * 2 * amp
-    end
-    root.Position = UDim2.fromOffset(shx, shy)
-    vp.Position = UDim2.fromOffset(shx, shy)
-
-    local cpos, ctarget = camAt(u)
-    cpos += V3(math.sin(t * 0.5) * 1.0, math.sin(t * 0.7) * 0.4, 0)
-    if amp > 0 then cpos += V3(rng:NextNumber() - 0.5, rng:NextNumber() - 0.5, 0) * amp * 0.03 end
-    cam.CFrame = CFrame.lookAt(cpos, ctarget)
-
-    if u < T_EXPLODE + 0.01 then
-        local appear = sm(0.03, 0.12, u)
-        gojoPlane.Transparency = 1 - appear
-        gojoPlane.CFrame = CFrame.lookAt(G_POS, G_POS + V3(1, 0, 0.25))
-
-        gojoAura.Position = G_POS + V3(0, 3, 0)
-        local gaSize = 12 + 2 * math.sin(t * 6)
-        gojoAura.Size = V3(gaSize, gaSize, gaSize)
-        gojoAura.Transparency = 1 - 0.2 * appear
-
-        local orbAppear = sm(0.16, 0.28, u)
-        local gone = 1 - sm(0.495, 0.505, u)
-        local osize = 0.5 + 3.5 * orbAppear + 1.0 * sm(0.28, 0.40, u)
-        local oint = orbAppear * gone
-        local m = clamp01((u - 0.40) / 0.10)
-        local m2 = m * m
-        blueOrb.update(HOLD_BLUE:Lerp(CP, m2), osize, oint)
-        redOrb.update(HOLD_RED:Lerp(CP, m2), osize, oint)
-
-        local pu = clamp01((u - 0.50) / 0.04)
-        local pf = clamp01((u - 0.545) / 0.175)
-        local ppos = CP:Lerp(HIT, pf ^ 1.6)
-        local psize = 3 + 8 * ease(pu) + 50 * (sm(0.72, 0.742, u) ^ 2)
-        local pint = sm(0.50, 0.515, u) * (1 - sm(0.742, 0.748, u))
-        purpleOrb.update(ppos, psize, pint)
-
-        local sApp = sm(0.56, 0.62, u)
-        sukunaPlane.Transparency = 1 - sApp
-        sukunaPlane.CFrame = CFrame.lookAt(S_POS, S_POS + V3(-1, 0, 0.3))
-
-        sukunaAura.Position = S_POS + V3(0, 3, 0)
-        sukunaAura.Size = V3(14, 14, 14)
-        sukunaAura.Transparency = 1 - 0.2 * sApp
-
-        local rise = sm(0.62, 0.69, u)
-        if u >= 0.58 then
-            local shPos = SH_POS + V3(0, -30 * (1 - rise), 0)
-            shrine.pose(CFrame.lookAt(shPos, shPos + V3(-1, 0, 0.6)))
-            shrine.setTransparency(1 - rise)
-        end
-    end
-
-    local nameText, nameCol, nameVis
-    if u < 0.56 then
-        nameText, nameCol = "GOJO", BLUE
-        nameVis = sm(0.10, 0.16, u) * (1 - sm(0.46, 0.52, u))
-    else
-        nameText, nameCol = "SUKUNA", RED
-        nameVis = sm(0.62, 0.68, u) * (1 - sm(0.71, 0.74, u))
-    end
-    if nameText ~= lastName then
-        lastName = nameText
-        nameLbl.Text = nameText
-        nameLbl.TextColor3 = nameCol
-    end
-    nameLbl.TextTransparency = 1 - nameVis
-
-    local aB = pulse(u, 0.06, 0.03, 0.5)
-    local aP = pulse(u, 0.50, 0.03, 0.7)
-    local aR = pulse(u, 0.60, 0.03, 0.5)
-    local aMax = math.max(aB, aP, aR)
-    if aMax == aP then tint.BackgroundColor3 = PURPLE
-    elseif aMax == aR then tint.BackgroundColor3 = RED
-    else tint.BackgroundColor3 = BLUE end
-    tint.BackgroundTransparency = 1 - aMax
-
-    local fl
-    if u < T_EXPLODE - 0.002 then fl = 1
-    elseif u < T_EXPLODE + 0.002 then fl = 1 - (u - (T_EXPLODE - 0.002)) / 0.004
-    else fl = (u - (T_EXPLODE + 0.002)) / 0.028 end
-    flash.BackgroundTransparency = math.clamp(fl, 0, 1)
-
-    local whiteOn = u >= T_EXPLODE and u < T_OFF + 0.005
-    halfA.Visible = whiteOn
-    halfB.Visible = whiteOn
-    reveal.Visible = u >= T_EXPLODE and u < T_END + 0.03
-    local wTrans = 1 - sm(T_EXPLODE, T_EXPLODE + 0.006, u)
-    halfA.BackgroundTransparency = wTrans
-    halfB.BackgroundTransparency = wTrans
-
-    if u >= 1 then finish() end
-end
-
-conn = RunService.RenderStepped:Connect(function(dt)
-    pcall(step, dt)
-end)
-
-print("[Intro] da khoi tao xong (Da fix anh 3D)")
-end)
-
-if not __ok then
-    warn("[Intro] LOI: " .. tostring(__err))
-    task.spawn(RunMainScript)
-end
+    local arc = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 13}, ring)
+    new("UICorner", {CornerRadius = UDim.new(1, 0)}, arc)
+    local arcStroke = new("UIStroke", {Thickness = 5, Color = WHITE}, arc)
+    local arcGrad = new("UIGradient", {
+        Color = ColorSequence.new(isLeft and BLUE or RED, WHITE
