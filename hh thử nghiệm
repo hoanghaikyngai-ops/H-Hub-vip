@@ -12,8 +12,8 @@ local DURATION        = 40              -- tổng thời gian intro (giây)
 local USE_PLAYERGUI   = true            -- true: PlayerGui | false: gethui/CoreGui
 
 -- Sử dụng ID Image trực tiếp cho khung 3D (Đã chuẩn hóa để hiện ảnh 100%)
-local GOJO_IMAGE_ID   = 6023426915      -- ID chuẩn hiển thị đồ họa Gojo 
-local SUKUNA_IMAGE_ID = 6023426915      -- ID chuẩn hiển thị đồ họa Sukuna
+local GOJO_IMAGE_ID   = 122542562057055      -- ID chuẩn hiển thị đồ họa Gojo 
+local SUKUNA_IMAGE_ID = 133333396820028      -- ID chuẩn hiển thị đồ họa Sukuna
 local DOMAIN_IMAGE_ID = 79840533071493  -- ảnh cả hai tung lãnh địa
 local TITLE_IMAGE_ID  = 0               -- 0 = dùng chữ viết bằng Lua
 
