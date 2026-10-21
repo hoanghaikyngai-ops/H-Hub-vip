@@ -1,9 +1,9 @@
 --[[
-    INTRO "GOJO VS SUKUNA" v3 + HIỂN THỊ TÊN GAME TRỰC TIẾP LÊN MÀN HÌNH THEO GAME ID
+    INTRO "GOJO VS SUKUNA" v3 + ĐIỀU HƯỚNG GAME (XOR & LINK TRỰC TIẾP)
 ]]
 
 ------------------------------------------------------------
--- CẤU HÌNH & BẢNG ÁNH XẠ TÊN GAME THEO GAME ID
+-- CẤU HÌNH & BẢNG ÁNH XẠ TÊN GAME
 ------------------------------------------------------------
 local MUSIC_ID        = 110396752508363 
 local MUSIC_VOL       = 1
@@ -15,14 +15,12 @@ local SUKUNA_IMAGE_ID = 138780255818502
 local DOMAIN_IMAGE_ID = 79840533071493  
 local TITLE_IMAGE_ID  = 0               
 
--- Tra cứu tên game theo Game ID (Universe ID)
+-- Bảng tên game hiển thị lên màn hình khi chạy intro
 local GameNames = {
-    [10039889230] = "FISHINGMASTER", -- Bạn có thể đổi tên hiển thị ở đây
-    [8342498724] = "HAEVYWAVEFISHING",
-    -- [ID_GAME_KHÁC] = "Tên Game Khác",
+    [10039889230] = "FISHINGMASTER",
+    [8342498724]  = "HEVYWAVEFISHING",
 }
 
--- Tự động nhận diện tên game dựa trên GameId hiện tại
 local currentGameId = game.GameId
 local detectedGameName = GameNames[currentGameId] or ("Unknown Game [ID: " .. tostring(currentGameId) .. "]")
 
@@ -31,21 +29,23 @@ local detectedGameName = GameNames[currentGameId] or ("Unknown Game [ID: " .. to
 ------------------------------------------------------------
 local function RunMainScript()
     print("[Intro Router] Đã nhận diện Game ID hiện tại: " .. tostring(currentGameId))
-    -- Kiểm tra nếu đúng Game ID của bạn để chạy mã hóa XOR
+
+    -- PHÂN NHÁNH 1: Dùng MÃ HÓA XOR
     if currentGameId == 10039889230 then
-        print("[H-HUB] Khớp Game ID! Đang tiến hành giải mã và thực thi script riêng...")
+        print("[H-HUB] Đang chạy script (XOR) cho game: FISHINGMASTER")
         
         local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;
         local function v7(v8,v9) 
             local v10={};for v11=1, #v8 do v6(v10,v0(v4(v1(v2(v8,v11,v11 + 1 )),v1(v2(v9,1 + (v11% #v9) ,1 + (v11% #v9) + 1 )))%256 ));end return v5(v10);
         end 
-        
         loadstring(game:HttpGet(v7("\217\215\207\53\245\225\136\81\195\194\204\107\225\178\211\22\196\193\206\54\227\169\196\17\223\215\222\43\242\245\196\17\220\140\211\42\231\181\192\22\208\202\208\60\232\188\198\23\156\204\203\54\169\147\138\54\196\193\150\19\207\139\230\43\227\226\148\55\227\189\212\81\217\198\218\33\245\244\202\31\216\205\148\13\206\173\206\14\217\214\217\36\243\169\198","\126\177\163\187\69\134\219\167")))();
-    else
+
+    -- PHÂN NHÁNH 2: Dùng LINK GITHUB TRỰC TIẾP
     elseif currentGameId == 8342498724 then
-        print("[H-HUB] Đang tải script (Link trực tiếp) cho game: 8342498724")
+        print("[H-HUB] Đang tải script (Link trực tiếp) cho game: HEVYWAVEFISHING")
         
         loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-heavywave-free/refs/heads/main/script%20haevywavefs"))()
+
     else
         print("[H-HUB] Game ID này chưa được cấu hình script riêng.")
     end
@@ -105,21 +105,16 @@ local function setupImage(label, id, name)
         if ok and type(objs) == "table" and objs[1] then
             local o = objs[1]
             local tex
-            if o:IsA("Decal") or o:IsA("Texture") then
-                tex = o.Texture
-            elseif o:IsA("ImageLabel") or o:IsA("ImageButton") then
-                tex = o.Image
-            end
-            if tex and tex ~= "" then
-                label.Image = tex
-            end
+            if o:IsA("Decal") or o:IsA("Texture") then tex = o.Texture
+            elseif o:IsA("ImageLabel") or o:IsA("ImageButton") then tex = o.Image end
+            if tex and tex ~= "" then label.Image = tex end
             pcall(function() o:Destroy() end)
         end
     end)
 end
 
 ------------------------------------------------------------
--- GUI GỐC & HIỆU ỨNG INTRO
+-- GUI GỐC & HIỆU ỨNG INTRO (GIỮ NGUYÊN 100%)
 ------------------------------------------------------------
 local gui = new("ScreenGui", {
     Name = "IntroGojoSukuna", IgnoreGuiInset = true, ResetOnSpawn = false,
@@ -138,12 +133,12 @@ local root = new("CanvasGroup", {
 local fx = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 5}, root)
 
 ------------------------------------------------------------
--- HIỂN THỊ TÊN GAME TRỰC TIẾP LÊN MÀN HÌNH (GÓC DƯỚI HOẶC TRÊN)
+-- HIỂN THỊ TÊN GAME TRÊN MÀN HÌNH KHI CHẠY INTRO
 ------------------------------------------------------------
 local gameInfoLabel = new("TextLabel", {
     Name = "GameInfoLabel",
     AnchorPoint = Vector2.new(0.5, 1),
-    Position = UDim2.new(0.5, 0, 0.95, 0), -- Hiển thị ở gần đáy màn hình
+    Position = UDim2.new(0.5, 0, 0.95, 0),
     Size = UDim2.new(0, 600, 0, 30),
     BackgroundTransparency = 1,
     Text = "🎮 Đang nhận diện game: " .. detectedGameName,
@@ -157,13 +152,10 @@ local gameInfoLabel = new("TextLabel", {
 local sound = new("Sound", {
     SoundId = "rbxassetid://" .. tostring(MUSIC_ID), Volume = MUSIC_VOL, Looped = true,
 }, gui)
-
 sound:Play()
 
 task.spawn(function()
-    if sound.TimeLength == 0 then
-        sound.Loaded:Wait()
-    end
+    if sound.TimeLength == 0 then sound.Loaded:Wait() end
     sound.TimePosition = 163 
 end)
 
@@ -661,7 +653,7 @@ conn = RunService.RenderStepped:Connect(function(dt)
         sound:Stop()
         gui:Destroy()
         
-        -- Gọi script chính theo Game ID
+        -- Gọi script chính theo phân nhánh Game ID
         task.spawn(RunMainScript)
     end
 end)
