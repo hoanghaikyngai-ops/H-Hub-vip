@@ -18,6 +18,7 @@ local TITLE_IMAGE_ID  = 0
 -- Tra cứu tên game theo Game ID (Universe ID)
 local GameNames = {
     [10039889230] = "FISHINGMASTER", -- Bạn có thể đổi tên hiển thị ở đây
+    [8342498724] = "HAEVYWAVEFISHING",
     -- [ID_GAME_KHÁC] = "Tên Game Khác",
 }
 
@@ -30,7 +31,10 @@ local detectedGameName = GameNames[currentGameId] or ("Unknown Game [ID: " .. to
 ------------------------------------------------------------
 local function RunMainScript()
     print("[Intro Router] Đã nhận diện Game ID hiện tại: " .. tostring(currentGameId))
+    if currentGameId == 8342498724 then
+        print("[H-HUB] Khớp Game ID! Đang tiến hành thực thi không giải mã vì chưa mã hóa...")
 
+        local loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-heavywave-free/refs/heads/main/script%20haevywavefs")()
     -- Kiểm tra nếu đúng Game ID của bạn để chạy mã hóa XOR
     if currentGameId == 10039889230 then
         print("[H-HUB] Khớp Game ID! Đang tiến hành giải mã và thực thi script riêng...")
