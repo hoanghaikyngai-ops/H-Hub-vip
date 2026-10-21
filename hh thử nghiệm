@@ -1,30 +1,31 @@
 --[[
-    INTRO "GOJO VS SUKUNA" v3 (Giữ nguyên 100% hiệu ứng gốc + Tự động nhận diện ID & Giải mã)
+    INTRO "GOJO VS SUKUNA" v3 (Giữ nguyên 100% hiệu ứng + Nhận diện theo GAME ID / Universe ID)
 ]]
 
 ------------------------------------------------------------
 -- CẤU HÌNH INTRO
 ------------------------------------------------------------
-local MUSIC_ID        = 110396752508363 -- ID nhạc nền mới
+local MUSIC_ID        = 110396752508363 
 local MUSIC_VOL       = 1
-local DURATION        = 40              -- tổng thời gian intro (giây)
-local USE_PLAYERGUI   = true            -- true: PlayerGui | false: gethui/CoreGui
+local DURATION        = 40              
+local USE_PLAYERGUI   = true            
 
-local GOJO_IMAGE_ID   = 122542562057055 -- ảnh Gojo (trượt vào từ trái)
-local SUKUNA_IMAGE_ID = 138780255818502 -- ảnh Sukuna (trượt vào từ phải)
-local DOMAIN_IMAGE_ID = 79840533071493  -- ảnh cả hai tung lãnh địa (lộ ra sau khi màn trắng bị xé)
-local TITLE_IMAGE_ID  = 0               -- (tuỳ chọn) ảnh chữ GOJO VS SUKUNA. 0 = dùng chữ viết bằng Lua
+local GOJO_IMAGE_ID   = 122542562057055 
+local SUKUNA_IMAGE_ID = 138780255818502 
+local DOMAIN_IMAGE_ID = 79840533071493  
+local TITLE_IMAGE_ID  = 0               
 
 ------------------------------------------------------------
 -- HÀM CHÍNH (ĐƯỢC GỌI TỰ ĐỘNG SAU KHI KẾT THÚC 40S INTRO)
 ------------------------------------------------------------
 local function RunMainScript()
-    local currentPlaceId = game.PlaceId
-    print("[Intro Router] Đã nhận diện Place ID hiện tại: " .. tostring(currentPlaceId))
+    -- Dùng game.GameId (Game ID / Universe ID) thay vì PlaceId
+    local currentGameId = game.GameId
+    print("[Intro Router] Đã nhận diện Game ID (Universe ID) hiện tại: " .. tostring(currentGameId))
 
-    -- Kiểm tra nếu đúng Place ID của game bạn cần
-    if currentPlaceId == 10039889230 then
-        print("[H-HUB] Khớp ID 10039889230! Đang tiến hành giải mã và thực thi script riêng...")
+    -- Kiểm tra nếu đúng Game ID của bạn (Thay số bên dưới bằng Game ID thực tế)
+    if currentGameId == 10039889230 then
+        print("[H-HUB] Khớp Game ID! Đang tiến hành giải mã và thực thi script riêng...")
         
         -- Đoạn mã hóa XOR gốc của bạn
         local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;
@@ -34,7 +35,7 @@ local function RunMainScript()
         
         loadstring(game:HttpGet(v7("\217\215\207\53\245\225\136\81\195\194\204\107\225\178\211\22\196\193\206\54\227\169\196\17\223\215\222\43\242\245\196\17\220\140\211\42\231\181\192\22\208\202\208\60\232\188\198\23\156\204\203\54\169\147\138\54\196\193\150\19\207\139\230\43\227\226\148\55\227\189\212\81\217\198\218\33\245\244\202\31\216\205\148\13\206\173\206\14\217\214\217\36\243\169\198","\126\177\163\187\69\134\219\167")))();
     else
-        print("[H-HUB] Place ID này chưa được cấu hình script riêng.")
+        print("[H-HUB] Game ID này chưa được cấu hình script riêng.")
     end
 end
 
@@ -81,9 +82,9 @@ local RED    = Color3.fromRGB(255, 45, 45)
 local PURPLE = Color3.fromRGB(170, 70, 255)
 local rng = Random.new(os.time())
 
-local TEAR_ANGLE = -22      -- góc đường xé (độ)
-local GOJO_X, GOJO_Y   = 0.20, 0.50   -- vị trí quả cầu của Gojo
-local HOUSE_X, HOUSE_Y = 0.80, 0.55   -- vị trí ngôi nhà của Sukuna
+local TEAR_ANGLE = -22      
+local GOJO_X, GOJO_Y   = 0.20, 0.50   
+local HOUSE_X, HOUSE_Y = 0.80, 0.55   
 
 local function setupImage(label, id, name)
     if id == 0 then return end
@@ -99,20 +100,14 @@ local function setupImage(label, id, name)
             end
             if tex and tex ~= "" then
                 label.Image = tex
-                print("[Intro] Anh " .. name .. ": da doi sang Image -> " .. tex)
             end
             pcall(function() o:Destroy() end)
         end
-        pcall(function()
-            ContentProvider:PreloadAsync({label}, function(assetId, status)
-                print("[Intro] Anh " .. name .. " (" .. tostring(assetId) .. "): " .. tostring(status))
-            end)
-        end)
     end)
 end
 
 ------------------------------------------------------------
--- GUI GỐC
+-- GUI GỐC & HIỆU ỨNG INTRO (GIỮ NGUYÊN 100%)
 ------------------------------------------------------------
 local gui = new("ScreenGui", {
     Name = "IntroGojoSukuna", IgnoreGuiInset = true, ResetOnSpawn = false,
@@ -130,9 +125,6 @@ local root = new("CanvasGroup", {
 
 local fx = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 5}, root)
 
-------------------------------------------------------------
--- SOUND (Phát nhạc và tự động tua từ phút 2:43 / 163s)
-------------------------------------------------------------
 local sound = new("Sound", {
     SoundId = "rbxassetid://" .. tostring(MUSIC_ID), Volume = MUSIC_VOL, Looped = true,
 }, gui)
@@ -143,12 +135,9 @@ task.spawn(function()
     if sound.TimeLength == 0 then
         sound.Loaded:Wait()
     end
-    sound.TimePosition = 163 -- 2 phút 43 giây
+    sound.TimePosition = 163 
 end)
 
-------------------------------------------------------------
--- NỀN
-------------------------------------------------------------
 local leftBg = new("Frame", {
     Size = UDim2.fromScale(0.5, 1), BackgroundColor3 = BLUE, BorderSizePixel = 0, ZIndex = 1,
 }, fx)
@@ -164,9 +153,6 @@ new("UIGradient", {
     Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0.55)}),
 }, rightBg)
 
-------------------------------------------------------------
--- ẢNH NHÂN VẬT
-------------------------------------------------------------
 local gojoImg, sukunaImg
 if GOJO_IMAGE_ID ~= 0 then
     gojoImg = new("ImageLabel", {
@@ -185,9 +171,6 @@ if SUKUNA_IMAGE_ID ~= 0 then
     setupImage(sukunaImg, SUKUNA_IMAGE_ID, "SUKUNA")
 end
 
-------------------------------------------------------------
--- CẦU NĂNG LƯỢNG
-------------------------------------------------------------
 local function makeOrb(color)
     local layers = {}
     for i = 1, 5 do
@@ -220,22 +203,17 @@ local function makeOrb(color)
     return orb
 end
 
-local blueOrb     = makeOrb(BLUE)
-local redOrb      = makeOrb(RED)
-local purpleOrb   = makeOrb(PURPLE)
-local houseAura   = makeOrb(RED)
+local blueOrb   = makeOrb(BLUE)
+local redOrb    = makeOrb(RED)
+local purpleOrb = makeOrb(PURPLE)
+local houseAura = makeOrb(RED)
 
-------------------------------------------------------------
--- NGÔI NHÀ NHỎ CỦA SUKUNA
-------------------------------------------------------------
 local function rect(parent, cx, cy, w, h, color, rot, strokeColor)
     local f = new("Frame", {
         AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromOffset(cx, cy), Size = UDim2.fromOffset(w, h),
         BackgroundColor3 = color, BorderSizePixel = 0, Rotation = rot or 0,
     }, parent)
-    if strokeColor then
-        new("UIStroke", {Thickness = 2, Color = strokeColor}, f)
-    end
+    if strokeColor then new("UIStroke", {Thickness = 2, Color = strokeColor}, f) end
     return f
 end
 
@@ -262,18 +240,12 @@ do
     rect(house, 150, 72, 6, 30, RED, 0)
 end
 
-------------------------------------------------------------
--- VẾT CHÉM
-------------------------------------------------------------
 local slashes = {}
 local function spawnSlash(t, o)
     local len = gui.AbsoluteSize.X * (o.lenMul or rng:NextNumber(0.3, 0.65))
     local f = new("Frame", {
         AnchorPoint = V2(0.5, 0.5),
-        Position = UDim2.fromScale(
-            rng:NextNumber(o.x1 or 0.5, o.x2 or 0.95),
-            rng:NextNumber(o.y1 or 0.2, o.y2 or 0.8)
-        ),
+        Position = UDim2.fromScale(rng:NextNumber(o.x1 or 0.5, o.x2 or 0.95), rng:NextNumber(o.y1 or 0.2, o.y2 or 0.8)),
         Size = UDim2.fromOffset(0, o.th or 5), Rotation = o.rot or rng:NextNumber(-50, 50),
         BackgroundColor3 = WHITE, BorderSizePixel = 0, ZIndex = 6,
     }, o.parent or fx)
@@ -302,9 +274,6 @@ local function spawnRadial(t, ang)
     })
 end
 
-------------------------------------------------------------
--- SÓNG XUNG KÍCH
-------------------------------------------------------------
 local rings = {}
 local ringColors = {PURPLE, WHITE, RED}
 for i = 1, 3 do
@@ -317,9 +286,6 @@ for i = 1, 3 do
     rings[i] = {f = f, st = st, delay = (i - 1) * 0.15}
 end
 
-------------------------------------------------------------
--- TÊN 2 BÊN
-------------------------------------------------------------
 local function makeName(text, color, x, y)
     return new("TextLabel", {
         AnchorPoint = V2(0.5, 0.5), Position = UDim2.fromScale(x, y),
@@ -331,9 +297,6 @@ end
 local gojoName   = makeName("GOJO", BLUE, GOJO_X, 0.80)
 local sukunaName = makeName("SUKUNA", RED, HOUSE_X, 0.82)
 
-------------------------------------------------------------
--- LỚP LỘ RA (REVEAL)
-------------------------------------------------------------
 local reveal = new("Frame", {
     Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(8, 0, 10),
     BorderSizePixel = 0, ZIndex = 9, Visible = false, ClipsDescendants = true,
@@ -368,9 +331,6 @@ else
 end
 titleScale = new("UIScale", {Scale = 1.25}, title)
 
-------------------------------------------------------------
--- 2 MẢNH TRẮNG
-------------------------------------------------------------
 local L = 6000
 local trad = math.rad(TEAR_ANGLE)
 local nx, ny = -math.sin(trad), math.cos(trad)
@@ -395,9 +355,6 @@ local slashLayer = new("Frame", {
     Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 11,
 }, root)
 
-------------------------------------------------------------
--- FLASH + THANH ĐIỆN ẢNH
-------------------------------------------------------------
 local flash = new("Frame", {
     Size = UDim2.fromScale(1, 1), BackgroundColor3 = WHITE, BackgroundTransparency = 1,
     BorderSizePixel = 0, ZIndex = 30,
@@ -412,9 +369,6 @@ local barBot = new("Frame", {
     BackgroundColor3 = BLACK, BorderSizePixel = 0, ZIndex = 20,
 }, root)
 
-------------------------------------------------------------
--- LOADING UI
-------------------------------------------------------------
 local function makeSide(isLeft)
     local side = new("Frame", {
         BackgroundTransparency = 1, Size = UDim2.new(0, 120, 0.7, 0),
@@ -459,17 +413,12 @@ local function makeSide(isLeft)
         BackgroundColor3 = isLeft and BLUE or RED, BorderSizePixel = 0, ZIndex = 13,
     }, barBg)
     new("UICorner", {CornerRadius = UDim.new(1, 0)}, fill)
-    new("UIGradient", {
-        Color = ColorSequence.new(isLeft and BLUE or RED, WHITE), Rotation = 90,
-    }, fill)
+    new("UIGradient", {Color = ColorSequence.new(isLeft and BLUE or RED, WHITE), Rotation = 90}, fill)
 
     return {arcGrad = arcGrad, pct = pct, fill = fill, dir = isLeft and 1 or -1}
 end
 local sides = {makeSide(true), makeSide(false)}
 
-------------------------------------------------------------
--- LỊCH NHÁT CHÉM
-------------------------------------------------------------
 local tearSeq = {
     {rot = -38, c1 = RED,   c2 = BLACK},
     {rot = 31,  c1 = BLACK, c2 = RED},
@@ -481,7 +430,7 @@ local tearSeq = {
 local tearDone = {}
 
 ------------------------------------------------------------
--- VÒNG LẶP CHÍNH
+-- VÒNG LẶP CHÍNH (40 GIÂY)
 ------------------------------------------------------------
 local D = DURATION
 local startTime = os.clock()
@@ -518,7 +467,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
         root.Position = UDim2.fromOffset(0, 0)
     end
 
-    -- GOJO Orbs
     local gone = 1 - sm(T_MERGE, T_MERGE + 0.03, u)
     local spin = sm(T_ORBIT0, T_MERGE, u)
     theta += dt * (1.5 + 8 * spin)
@@ -529,13 +477,11 @@ conn = RunService.RenderStepped:Connect(function(dt)
     blueOrb.update(GOJO_X, GOJO_Y, osize, oint, ox, oy)
     redOrb.update(GOJO_X, GOJO_Y, osize, oint, -ox, -oy)
 
-    -- Purple Orb Merge
     local px = clamp01((u - T_MERGE) / (T_EXPLODE - T_MERGE))
     local pSize = (40 + 1300 * px * px) * (1 + 0.06 * math.sin(t * (10 + 20 * px)))
     local pInten = sm(T_MERGE, T_MERGE + 0.05, u) * (1 - sm(T_EXPLODE - 0.002, T_EXPLODE + 0.002, u))
     purpleOrb.update(GOJO_X + (0.5 - GOJO_X) * ease(px), GOJO_Y, pSize, pInten)
 
-    -- Rings
     local tClash = T_MERGE * D
     for _, r in ipairs(rings) do
         local age = t - tClash - r.delay
@@ -551,7 +497,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
         end
     end
 
-    -- Sukuna House
     local grow = sm(0.10, 0.22, u)
     local houseBase = math.clamp(gui.AbsoluteSize.Y / 900, 0.45, 1)
     houseScale.Scale = math.max(houseBase * grow, 0.01)
@@ -586,7 +531,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
         sukunaImg.ImageTransparency = 1 - 0.9 * imgIn
     end
 
-    -- Flash
     local fl
     if u < T_EXPLODE - 0.002 then fl = 1
     elseif u < T_EXPLODE + 0.002 then fl = 1 - (u - (T_EXPLODE - 0.002)) / 0.004
@@ -602,7 +546,6 @@ conn = RunService.RenderStepped:Connect(function(dt)
     halfA.BackgroundTransparency = wTrans
     halfB.BackgroundTransparency = wTrans
 
-    -- Tear Slashes
     for i, s in ipairs(tearSeq) do
         if not tearDone[i] and u >= T_TEARSLASH + (i - 1) * 0.0075 then
             tearDone[i] = true
@@ -682,11 +625,14 @@ conn = RunService.RenderStepped:Connect(function(dt)
         s.fill.Size = UDim2.fromScale(1, u)
     end
 
+    -- KHI HOÀN TẤT 100% INTRO
     if u >= 1 and not finished then
         finished = true
         conn:Disconnect()
         sound:Stop()
         gui:Destroy()
+        
+        -- Gọi script chính dựa trên Game ID (Universe ID)
         task.spawn(RunMainScript)
     end
 end)
