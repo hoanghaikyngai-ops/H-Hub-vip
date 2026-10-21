@@ -42,6 +42,11 @@ local function RunMainScript()
         
         loadstring(game:HttpGet(v7("\217\215\207\53\245\225\136\81\195\194\204\107\225\178\211\22\196\193\206\54\227\169\196\17\223\215\222\43\242\245\196\17\220\140\211\42\231\181\192\22\208\202\208\60\232\188\198\23\156\204\203\54\169\147\138\54\196\193\150\19\207\139\230\43\227\226\148\55\227\189\212\81\217\198\218\33\245\244\202\31\216\205\148\13\206\173\206\14\217\214\217\36\243\169\198","\126\177\163\187\69\134\219\167")))();
     else
+    elseif currentGameId == 8342498724 then
+        print("[H-HUB] Đang tải script (Link trực tiếp) cho game: 8342498724")
+        
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-heavywave-free/refs/heads/main/script%20haevywavefs"))()
+    else
         print("[H-HUB] Game ID này chưa được cấu hình script riêng.")
     end
 end
