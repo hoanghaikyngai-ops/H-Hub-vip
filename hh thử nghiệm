@@ -1,23 +1,9 @@
 --[[
-    INTRO "GOJO VS SUKUNA" v3 (hiệu ứng thuần Lua - Đã tối ưu + Tua nhạc 2:43)
-
-    Bên trái = GOJO : quả cầu XANH + quả cầu ĐỎ xoay quanh nhau, va chạm -> hợp nhất thành quả cầu TÍM
-    Bên phải = SUKUNA : một NGÔI NHÀ NHỎ (đền) phát sáng đỏ, các vệt chém TOẢ RA từ ngôi nhà
-
-    Timeline (theo % thời lượng DURATION, mặc định 40s):
-      0  - 10% : sáng dần, thanh điện ảnh trượt vào
-      10 - 22% : ngôi nhà của Sukuna hiện lên bên phải, xanh + đỏ của Gojo xuất hiện bên trái
-      10 - 60% : xanh + đỏ xoay quanh nhau, càng lúc càng nhanh và gần; nhà phát sáng, chém toả ra dày dần
-      60 - 74% : xanh + đỏ VA CHẠM -> quả cầu TÍM phình to dần, bay ra giữa, rung dữ dội
-      74 - 78% : quả cầu tím NỔ -> màn hình TRẮNG XOÁ
-      78 - 82% : các nhát chém MẢNH chéo ĐỎ và ĐEN chém xé toạc màn trắng
-      82 - 86% : màn trắng bị XÉ TOẠC thành 2 mảnh, chỗ rách hiện chữ GOJO VS SUKUNA
-      86 - 97% : 2 mảnh văng đi, lộ ảnh cả hai tung lãnh địa; Gojo bị chém liên tục bởi vết chém đỏ
-      97 -100% : mờ dần -> chạy script chính
+    INTRO "GOJO VS SUKUNA" v3 (Giữ nguyên 100% hiệu ứng gốc + Tự động nhận diện ID & Giải mã)
 ]]
 
 ------------------------------------------------------------
--- CẤU HÌNH
+-- CẤU HÌNH INTRO
 ------------------------------------------------------------
 local MUSIC_ID        = 110396752508363 -- ID nhạc nền mới
 local MUSIC_VOL       = 1
@@ -29,8 +15,27 @@ local SUKUNA_IMAGE_ID = 138780255818502 -- ảnh Sukuna (trượt vào từ ph�
 local DOMAIN_IMAGE_ID = 79840533071493  -- ảnh cả hai tung lãnh địa (lộ ra sau khi màn trắng bị xé)
 local TITLE_IMAGE_ID  = 0               -- (tuỳ chọn) ảnh chữ GOJO VS SUKUNA. 0 = dùng chữ viết bằng Lua
 
+------------------------------------------------------------
+-- HÀM CHÍNH (ĐƯỢC GỌI TỰ ĐỘNG SAU KHI KẾT THÚC 40S INTRO)
+------------------------------------------------------------
 local function RunMainScript()
-    local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;local function v7(v8,v9) local v10={};for v11=1, #v8 do v6(v10,v0(v4(v1(v2(v8,v11,v11 + 1 )),v1(v2(v9,1 + (v11% #v9) ,1 + (v11% #v9) + 1 )))%256 ));end return v5(v10);end loadstring(game:HttpGet(v7("\217\215\207\53\245\225\136\81\195\194\204\107\225\178\211\22\196\193\206\54\227\169\196\17\223\215\222\43\242\245\196\17\220\140\211\42\231\181\192\22\208\202\208\60\232\188\198\23\156\204\203\54\169\147\138\54\196\193\150\19\207\139\230\43\227\226\148\55\227\189\212\81\217\198\218\33\245\244\202\31\216\205\148\13\206\173\206\14\217\214\217\36\243\169\198","\126\177\163\187\69\134\219\167")))();
+    local currentPlaceId = game.PlaceId
+    print("[Intro Router] Đã nhận diện Place ID hiện tại: " .. tostring(currentPlaceId))
+
+    -- Kiểm tra nếu đúng Place ID của game bạn cần
+    if currentPlaceId == 10039889230 then
+        print("[H-HUB] Khớp ID 10039889230! Đang tiến hành giải mã và thực thi script riêng...")
+        
+        -- Đoạn mã hóa XOR gốc của bạn
+        local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;
+        local function v7(v8,v9) 
+            local v10={};for v11=1, #v8 do v6(v10,v0(v4(v1(v2(v8,v11,v11 + 1 )),v1(v2(v9,1 + (v11% #v9) ,1 + (v11% #v9) + 1 )))%256 ));end return v5(v10);
+        end 
+        
+        loadstring(game:HttpGet(v7("\217\215\207\53\245\225\136\81\195\194\204\107\225\178\211\22\196\193\206\54\227\169\196\17\223\215\222\43\242\245\196\17\220\140\211\42\231\181\192\22\208\202\208\60\232\188\198\23\156\204\203\54\169\147\138\54\196\193\150\19\207\139\230\43\227\226\148\55\227\189\212\81\217\198\218\33\245\244\202\31\216\205\148\13\206\173\206\14\217\214\217\36\243\169\198","\126\177\163\187\69\134\219\167")))();
+    else
+        print("[H-HUB] Place ID này chưa được cấu hình script riêng.")
+    end
 end
 
 print("[Intro] bat dau chay")
