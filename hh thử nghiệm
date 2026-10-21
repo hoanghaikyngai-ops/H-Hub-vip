@@ -1,9 +1,9 @@
 --[[
-    INTRO "GOJO VS SUKUNA" v3 (Giữ nguyên 100% hiệu ứng + Nhận diện theo GAME ID / Universe ID)
+    INTRO "GOJO VS SUKUNA" v3 + HIỂN THỊ TÊN GAME TRỰC TIẾP LÊN MÀN HÌNH THEO GAME ID
 ]]
 
 ------------------------------------------------------------
--- CẤU HÌNH INTRO
+-- CẤU HÌNH & BẢNG ÁNH XẠ TÊN GAME THEO GAME ID
 ------------------------------------------------------------
 local MUSIC_ID        = 110396752508363 
 local MUSIC_VOL       = 1
@@ -15,19 +15,26 @@ local SUKUNA_IMAGE_ID = 138780255818502
 local DOMAIN_IMAGE_ID = 79840533071493  
 local TITLE_IMAGE_ID  = 0               
 
+-- Tra cứu tên game theo Game ID (Universe ID)
+local GameNames = {
+    [10039889230] = "FISHINGMASTER", -- Bạn có thể đổi tên hiển thị ở đây
+    -- [ID_GAME_KHÁC] = "Tên Game Khác",
+}
+
+-- Tự động nhận diện tên game dựa trên GameId hiện tại
+local currentGameId = game.GameId
+local detectedGameName = GameNames[currentGameId] or ("Unknown Game [ID: " .. tostring(currentGameId) .. "]")
+
 ------------------------------------------------------------
 -- HÀM CHÍNH (ĐƯỢC GỌI TỰ ĐỘNG SAU KHI KẾT THÚC 40S INTRO)
 ------------------------------------------------------------
 local function RunMainScript()
-    -- Dùng game.GameId (Game ID / Universe ID) thay vì PlaceId
-    local currentGameId = game.GameId
-    print("[Intro Router] Đã nhận diện Game ID (Universe ID) hiện tại: " .. tostring(currentGameId))
+    print("[Intro Router] Đã nhận diện Game ID hiện tại: " .. tostring(currentGameId))
 
-    -- Kiểm tra nếu đúng Game ID của bạn (Thay số bên dưới bằng Game ID thực tế)
+    -- Kiểm tra nếu đúng Game ID của bạn để chạy mã hóa XOR
     if currentGameId == 10039889230 then
         print("[H-HUB] Khớp Game ID! Đang tiến hành giải mã và thực thi script riêng...")
         
-        -- Đoạn mã hóa XOR gốc của bạn
         local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;
         local function v7(v8,v9) 
             local v10={};for v11=1, #v8 do v6(v10,v0(v4(v1(v2(v8,v11,v11 + 1 )),v1(v2(v9,1 + (v11% #v9) ,1 + (v11% #v9) + 1 )))%256 ));end return v5(v10);
@@ -107,7 +114,7 @@ local function setupImage(label, id, name)
 end
 
 ------------------------------------------------------------
--- GUI GỐC & HIỆU ỨNG INTRO (GIỮ NGUYÊN 100%)
+-- GUI GỐC & HIỆU ỨNG INTRO
 ------------------------------------------------------------
 local gui = new("ScreenGui", {
     Name = "IntroGojoSukuna", IgnoreGuiInset = true, ResetOnSpawn = false,
@@ -124,6 +131,23 @@ local root = new("CanvasGroup", {
 }, gui)
 
 local fx = new("Frame", {Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 5}, root)
+
+------------------------------------------------------------
+-- HIỂN THỊ TÊN GAME TRỰC TIẾP LÊN MÀN HÌNH (GÓC DƯỚI HOẶC TRÊN)
+------------------------------------------------------------
+local gameInfoLabel = new("TextLabel", {
+    Name = "GameInfoLabel",
+    AnchorPoint = Vector2.new(0.5, 1),
+    Position = UDim2.new(0.5, 0, 0.95, 0), -- Hiển thị ở gần đáy màn hình
+    Size = UDim2.new(0, 600, 0, 30),
+    BackgroundTransparency = 1,
+    Text = "🎮 Đang nhận diện game: " .. detectedGameName,
+    Font = Enum.Font.GothamBold,
+    TextSize = 16,
+    TextColor3 = Color3.fromRGB(200, 200, 255),
+    TextStrokeTransparency = 0.3,
+    ZIndex = 25,
+}, root)
 
 local sound = new("Sound", {
     SoundId = "rbxassetid://" .. tostring(MUSIC_ID), Volume = MUSIC_VOL, Looped = true,
@@ -632,7 +656,7 @@ conn = RunService.RenderStepped:Connect(function(dt)
         sound:Stop()
         gui:Destroy()
         
-        -- Gọi script chính dựa trên Game ID (Universe ID)
+        -- Gọi script chính theo Game ID
         task.spawn(RunMainScript)
     end
 end)
