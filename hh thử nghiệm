@@ -18,7 +18,7 @@ local TITLE_IMAGE_ID  = 0
 -- Bảng tên game hiển thị lên màn hình khi chạy intro
 local GameNames = {
     [10039889230] = "FISHINGMASTER",
-    [8342498724]  = "HEVYWAVEFISHING",
+    [8342498724]  = "HEVYWEIGHTFISHING",
 }
 
 local currentGameId = game.GameId
