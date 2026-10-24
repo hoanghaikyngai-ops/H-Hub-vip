@@ -19,7 +19,7 @@ local TITLE_IMAGE_ID  = 0
 local GameNames = {
     [10039889230] = "FISHINGMASTER",
     [8342498724]  = "HEVYWEIGHTFISHING",
-    [15876359302] = "steal an egg",
+    [10563114921] = "steal an egg",
 }
 
 local currentGameId = game.GameId
@@ -47,7 +47,7 @@ local function RunMainScript()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-heavywave-free/refs/heads/main/script%20haevywavefs"))()
 
     -- PHÂN NHÁNH 3: Dùng LINK GITHUB TRỰC TIẾP (steal an egg)
-    elseif currentGameId == 15876359302 then
+    elseif currentGameId == 10563114921 then
         print("[H-HUB] Đang tải script (Link trực tiếp) cho game: steal an egg")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-free-steal-an-egg-HHvip20-/refs/heads/main/script%20steal%20an%20egg%20HH%20free%20220%25"))()
 
