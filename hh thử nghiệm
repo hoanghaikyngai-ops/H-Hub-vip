@@ -19,6 +19,7 @@ local TITLE_IMAGE_ID  = 0
 local GameNames = {
     [10039889230] = "FISHINGMASTER",
     [8342498724]  = "HEVYWEIGHTFISHING",
+    [15876359302] = "steal an egg",
 }
 
 local currentGameId = game.GameId
@@ -50,7 +51,13 @@ local function RunMainScript()
         print("[H-HUB] Game ID này chưa được cấu hình script riêng.")
     end
 end
-
+    elseif currentGameId == 15876359302 then
+        print("[H-HUB] Đang tải script (Link trực tiếp) cho game: steal an egg")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-free-steal-an-egg-HHvip20-/refs/heads/main/script%20steal%20an%20egg%20HH%20free%20220%25"))()
+    else
+        print("[H-HUB] Game ID này chưa được cấu hình script riêng.")
+    end
+end
 print("[Intro] bat dau chay")
 local __ok, __err = pcall(function()
 
