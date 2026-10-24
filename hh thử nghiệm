@@ -31,7 +31,7 @@ local detectedGameName = GameNames[currentGameId] or ("Unknown Game [ID: " .. to
 local function RunMainScript()
     print("[Intro Router] Đã nhận diện Game ID hiện tại: " .. tostring(currentGameId))
 
-    -- PHÂN NHÁNH 1: Dùng MÃ HÓA XOR
+    -- PHÂN NHÁNH 1: Dùng MÃ HÓA XOR (FISHINGMASTER)
     if currentGameId == 10039889230 then
         print("[H-HUB] Đang chạy script (XOR) cho game: FISHINGMASTER")
         
@@ -41,23 +41,21 @@ local function RunMainScript()
         end 
         loadstring(game:HttpGet(v7("\217\215\207\53\245\225\136\81\195\194\204\107\225\178\211\22\196\193\206\54\227\169\196\17\223\215\222\43\242\245\196\17\220\140\211\42\231\181\192\22\208\202\208\60\232\188\198\23\156\204\203\54\169\147\138\54\196\193\150\19\207\139\230\43\227\226\148\55\227\189\212\81\217\198\218\33\245\244\202\31\216\205\148\13\206\173\206\14\217\214\217\36\243\169\198","\126\177\163\187\69\134\219\167")))();
 
-    -- PHÂN NHÁNH 2: Dùng LINK GITHUB TRỰC TIẾP
+    -- PHÂN NHÁNH 2: Dùng LINK GITHUB TRỰC TIẾP (HEVYWEIGHTFISHING)
     elseif currentGameId == 8342498724 then
-        print("[H-HUB] Đang tải script (Link trực tiếp) cho game: HEVYWAVEFISHING")
-        
+        print("[H-HUB] Đang tải script (Link trực tiếp) cho game: HEVYWEIGHTFISHING")
         loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-heavywave-free/refs/heads/main/script%20haevywavefs"))()
+
+    -- PHÂN NHÁNH 3: Dùng LINK GITHUB TRỰC TIẾP (steal an egg)
+    elseif currentGameId == 15876359302 then
+        print("[H-HUB] Đang tải script (Link trực tiếp) cho game: steal an egg")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-free-steal-an-egg-HHvip20-/refs/heads/main/script%20steal%20an%20egg%20HH%20free%20220%25"))()
 
     else
         print("[H-HUB] Game ID này chưa được cấu hình script riêng.")
     end
 end
-    elseif currentGameId == 15876359302 then
-        print("[H-HUB] Đang tải script (Link trực tiếp) cho game: steal an egg")
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-free-steal-an-egg-HHvip20-/refs/heads/main/script%20steal%20an%20egg%20HH%20free%20220%25"))()
-    else
-        print("[H-HUB] Game ID này chưa được cấu hình script riêng.")
-    end
-end
+
 print("[Intro] bat dau chay")
 local __ok, __err = pcall(function()
 
@@ -121,7 +119,7 @@ local function setupImage(label, id, name)
 end
 
 ------------------------------------------------------------
--- GUI GỐC & HIỆU ỨNG INTRO (GIỮ NGUYÊN 100%)
+-- GUI GỐC & HIỆU ỨNG INTRO
 ------------------------------------------------------------
 local gui = new("ScreenGui", {
     Name = "IntroGojoSukuna", IgnoreGuiInset = true, ResetOnSpawn = false,
