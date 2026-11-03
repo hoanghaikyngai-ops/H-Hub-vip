@@ -27,35 +27,35 @@ local CONFIG = {
 ---------------------------------------------------------------------
 local GAMES = {
     {
-        Name = "TÊN GAME 1",
-        Ids  = { 0 }, -- ← thay bằng id game 1
+        Name = "BLOX FRUIT",
+        Ids  = { 2753915549 }, -- ← thay bằng id game 1
         Script = function()
             -- DÁN LOADSTRING GAME 1 VÀO ĐÂY
-            -- loadstring(game:HttpGet("https://..."))()
+            -- loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-bloxfruit/refs/heads/main/scriptbloxfruit20%25"))()
         end,
     },
     {
-        Name = "TÊN GAME 2",
-        Ids  = { 0 }, -- ← thay bằng id game 2
+        Name = "STEAD AN EGG",
+        Ids  = { 107778070777162 }, -- ← thay bằng id game 2
         Script = function()
             -- DÁN LOADSTRING GAME 2 VÀO ĐÂY
-            -- loadstring(game:HttpGet("https://..."))()
+            -- loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-free-steal-an-egg-HHvip20-/refs/heads/main/script%20steal%20an%20egg%20HH%20free%20220%25"))()
         end,
     },
     {
-        Name = "TÊN GAME 3",
-        Ids  = { 0 }, -- ← thay bằng id game 3
+        Name = "FISHING MASTER",
+        Ids  = { 99925503388128 }, -- ← thay bằng id game 3
         Script = function()
             -- DÁN LOADSTRING GAME 3 VÀO ĐÂY
-            -- loadstring(game:HttpGet("https://..."))()
+            -- loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/H-Hub-VIPAURA/refs/heads/main/HHviphubaura"))()
         end,
     },
     {
-        Name = "TÊN GAME 4",
-        Ids  = { 0 }, -- ← thay bằng id game 4
+        Name = "HEAVYWEIGHT FISHING",
+        Ids  = { 98502499119821 }, -- ← thay bằng id game 4
         Script = function()
             -- DÁN LOADSTRING GAME 4 VÀO ĐÂY
-            -- loadstring(game:HttpGet("https://..."))()
+            -- loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-heavywave-free/refs/heads/main/script%20haevywavefs"))()
         end,
     },
 }
