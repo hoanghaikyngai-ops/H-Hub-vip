@@ -35,7 +35,7 @@ local GAMES = {
         },
         Script = function()
             -- DÁN LOADSTRING BLOX FRUITS VÀO ĐÂY
-             loadstring(game:HttpGet(""))()
+             loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-bloxfruit/refs/heads/main/scriptbloxfruit20%25"))()
         end,
     },
     {
@@ -43,6 +43,7 @@ local GAMES = {
         Ids  = { 107778070777162, 71044983320367, 105628449621876 },
         Script = function()
             -- DÁN LOADSTRING STEAL AN EGG VÀO ĐÂY
+             loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-free-steal-an-egg-HHvip20-/refs/heads/main/script%20steal%20an%20egg%20HH%20free%20220%25"))()
         end,
     },
     {
@@ -50,6 +51,7 @@ local GAMES = {
         Ids  = { 99925503388128 },
         Script = function()
             -- DÁN LOADSTRING FISHING MASTER VÀO ĐÂY
+             loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/H-Hub-VIPAURA/refs/heads/main/HHviphubaura"))()
         end,
     },
     {
@@ -57,6 +59,7 @@ local GAMES = {
         Ids  = { 98502499119821 },
         Script = function()
             -- DÁN LOADSTRING HEAVYWEIGHT FISHING VÀO ĐÂY
+             loadstring(game:HttpGet("https://raw.githubusercontent.com/hoanghaikyngai-ops/script-heavywave-free/refs/heads/main/script%20haevywavefs"))()
         end,
     },
 }
